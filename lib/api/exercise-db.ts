@@ -1,4 +1,8 @@
-const EXERCISE_DB_API = 'https://exercisedb.p.rapidapi.com'
+const EXERCISE_DB_API = 'https://edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
+const RAPIDAPI_HOST = 'edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
+
+// Use the provided API key
+const API_KEY = process.env.EXERCISEDB_API_KEY || 'f05ef55276msh84240bd7ffa0aeep14febbjsna57c88773ab6'
 
 export interface ExerciseDBExercise {
   id: string
@@ -6,7 +10,11 @@ export interface ExerciseDBExercise {
   target: string
   equipment: string
   bodyPart: string
-  gifUrl: string
+  gifUrl?: string
+  videoUrl?: string
+  imageUrl?: string
+  secondaryMuscles?: string[]
+  instructions?: string[]
 }
 
 export interface NormalizedExercise {
@@ -16,6 +24,9 @@ export interface NormalizedExercise {
   equipment: string
   bodyPart: string
   gifUrl: string
+  videoUrl?: string
+  secondaryMuscles?: string[]
+  instructions?: string[]
 }
 
 /**
@@ -28,51 +39,117 @@ function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
     targetMuscle: exercise.target,
     equipment: exercise.equipment,
     bodyPart: exercise.bodyPart,
-    gifUrl: exercise.gifUrl,
+    gifUrl: exercise.gifUrl || exercise.imageUrl || '',
+    videoUrl: exercise.videoUrl,
+    secondaryMuscles: exercise.secondaryMuscles,
+    instructions: exercise.instructions,
   }
 }
 
 /**
- * Fetch exercises by target muscle group
+ * Get common request headers
  */
-export async function getExercisesByMuscle(muscle: string): Promise<NormalizedExercise[]> {
+function getHeaders() {
+  return {
+    'x-rapidapi-key': API_KEY,
+    'x-rapidapi-host': RAPIDAPI_HOST,
+    'Content-Type': 'application/json',
+  }
+}
+
+/**
+ * Fetch all muscles
+ */
+export async function getMuscles(): Promise<string[]> {
   try {
-    console.log('[v0] Fetching exercises for muscle:', muscle)
-    
-    const response = await fetch(`${EXERCISE_DB_API}/exercises/target/${muscle}`, {
-      headers: {
-        'x-rapidapi-key': process.env.EXERCISEDB_API_KEY || '',
-        'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
-      },
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/muscles`, {
+      headers: getHeaders(),
     })
 
     if (!response.ok) {
       throw new Error(`ExerciseDB API error: ${response.status}`)
     }
 
+    return await response.json()
+  } catch (error) {
+    console.error('[v0] Error fetching muscles:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch all equipment
+ */
+export async function getEquipment(): Promise<string[]> {
+  try {
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/equipments`, {
+      headers: getHeaders(),
+    })
+
+    if (!response.ok) {
+      throw new Error(`ExerciseDB API error: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('[v0] Error fetching equipment:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch all body parts
+ */
+export async function getBodyParts(): Promise<string[]> {
+  try {
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/bodyparts`, {
+      headers: getHeaders(),
+    })
+
+    if (!response.ok) {
+      throw new Error(`ExerciseDB API error: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('[v0] Error fetching body parts:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch exercises by target muscle group
+ * Endpoint: /api/v1/muscles/{muscleName}/exercises
+ */
+export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<NormalizedExercise[]> {
+  try {
+    const response = await fetch(
+      `${EXERCISE_DB_API}/api/v1/muscles/${encodeURIComponent(muscle)}/exercises?limit=${limit}`,
+      { headers: getHeaders() }
+    )
+
+    if (!response.ok) {
+      throw new Error(`ExerciseDB API error: ${response.status}`)
+    }
+
     const data: ExerciseDBExercise[] = await response.json()
-    console.log('[v0] Received exercises:', data.length)
-    
     return data.map(normalizeExercise)
   } catch (error) {
-    console.error('[v0] Error fetching exercises:', error)
+    console.error('[v0] Error fetching exercises by muscle:', error)
     throw error
   }
 }
 
 /**
  * Fetch exercises by equipment type
+ * Endpoint: /api/v1/equipments/{equipmentName}/exercises
  */
-export async function getExercisesByEquipment(equipment: string): Promise<NormalizedExercise[]> {
+export async function getExercisesByEquipment(equipment: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
-    console.log('[v0] Fetching exercises for equipment:', equipment)
-    
-    const response = await fetch(`${EXERCISE_DB_API}/exercises/equipment/${equipment}`, {
-      headers: {
-        'x-rapidapi-key': process.env.EXERCISEDB_API_KEY || '',
-        'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
-      },
-    })
+    const response = await fetch(
+      `${EXERCISE_DB_API}/api/v1/equipments/${encodeURIComponent(equipment)}/exercises?limit=${limit}`,
+      { headers: getHeaders() }
+    )
 
     if (!response.ok) {
       throw new Error(`ExerciseDB API error: ${response.status}`)
@@ -81,24 +158,21 @@ export async function getExercisesByEquipment(equipment: string): Promise<Normal
     const data: ExerciseDBExercise[] = await response.json()
     return data.map(normalizeExercise)
   } catch (error) {
-    console.error('[v0] Error fetching exercises:', error)
+    console.error('[v0] Error fetching exercises by equipment:', error)
     throw error
   }
 }
 
 /**
  * Fetch exercises by body part
+ * Endpoint: /api/v1/bodyparts/{bodyPartName}/exercises
  */
-export async function getExercisesByBodyPart(bodyPart: string): Promise<NormalizedExercise[]> {
+export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
-    console.log('[v0] Fetching exercises for body part:', bodyPart)
-    
-    const response = await fetch(`${EXERCISE_DB_API}/exercises/bodyPart/${bodyPart}`, {
-      headers: {
-        'x-rapidapi-key': process.env.EXERCISEDB_API_KEY || '',
-        'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
-      },
-    })
+    const response = await fetch(
+      `${EXERCISE_DB_API}/api/v1/bodyparts/${encodeURIComponent(bodyPart)}/exercises?limit=${limit}`,
+      { headers: getHeaders() }
+    )
 
     if (!response.ok) {
       throw new Error(`ExerciseDB API error: ${response.status}`)
@@ -107,7 +181,30 @@ export async function getExercisesByBodyPart(bodyPart: string): Promise<Normaliz
     const data: ExerciseDBExercise[] = await response.json()
     return data.map(normalizeExercise)
   } catch (error) {
-    console.error('[v0] Error fetching exercises:', error)
+    console.error('[v0] Error fetching exercises by body part:', error)
+    throw error
+  }
+}
+
+/**
+ * Fetch all exercises (with optional pagination)
+ * Endpoint: /api/v1/exercises
+ */
+export async function getAllExercises(limit = 30, offset = 0): Promise<NormalizedExercise[]> {
+  try {
+    const response = await fetch(
+      `${EXERCISE_DB_API}/api/v1/exercises?limit=${limit}&offset=${offset}`,
+      { headers: getHeaders() }
+    )
+
+    if (!response.ok) {
+      throw new Error(`ExerciseDB API error: ${response.status}`)
+    }
+
+    const data: ExerciseDBExercise[] = await response.json()
+    return data.map(normalizeExercise)
+  } catch (error) {
+    console.error('[v0] Error fetching all exercises:', error)
     throw error
   }
 }
@@ -119,25 +216,25 @@ export const FALLBACK_EXERCISES: NormalizedExercise[] = [
   {
     id: 'fallback-1',
     name: 'Barbell Bench Press',
-    targetMuscle: 'chest',
+    targetMuscle: 'pectorals',
     equipment: 'barbell',
     bodyPart: 'chest',
-    gifUrl: 'https://via.placeholder.com/400x300?text=Bench+Press',
+    gifUrl: '',
   },
   {
     id: 'fallback-2',
     name: 'Barbell Squat',
-    targetMuscle: 'quadriceps',
+    targetMuscle: 'quads',
     equipment: 'barbell',
-    bodyPart: 'legs',
-    gifUrl: 'https://via.placeholder.com/400x300?text=Squat',
+    bodyPart: 'upper legs',
+    gifUrl: '',
   },
   {
     id: 'fallback-3',
     name: 'Deadlift',
-    targetMuscle: 'back',
+    targetMuscle: 'glutes',
     equipment: 'barbell',
-    bodyPart: 'back',
-    gifUrl: 'https://via.placeholder.com/400x300?text=Deadlift',
+    bodyPart: 'upper legs',
+    gifUrl: '',
   },
 ]
