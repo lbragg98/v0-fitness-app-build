@@ -20,9 +20,11 @@ export function SetTracker({ sets, targetReps, restDuration, onCompleteSet }: Se
 
   const handleCompleteSet = (setIndex: number) => {
     const reps = parseInt(repsInput) || 0
-    const weight = parseFloat(weightInput) || 0
+    const isLastSet = setIndex === sets.length - 1
+    const weight = isLastSet ? (parseFloat(weightInput) || 0) : 0
 
-    if (reps > 0 && weight > 0) {
+    // Only require weight on the last set
+    if (reps > 0 && (isLastSet ? weight > 0 : true)) {
       onCompleteSet(setIndex, reps, weight)
       setRepsInput('')
       setWeightInput('')
@@ -87,27 +89,30 @@ export function SetTracker({ sets, targetReps, restDuration, onCompleteSet }: Se
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs text-muted-foreground uppercase font-semibold">Weight Used</label>
-                  <div className="flex gap-2 mt-1">
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={weightInput}
-                      onChange={(e) => setWeightInput(e.target.value)}
-                      placeholder="0"
-                      className="flex-1 px-3 py-2 border border-border rounded-lg text-foreground bg-background"
-                    />
-                    <select className="px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-                      <option>lbs</option>
-                      <option>kg</option>
-                    </select>
+                {/* Only show weight input on the final set */}
+                {idx === sets.length - 1 && (
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase font-semibold">Weight Used (for all sets)</label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={weightInput}
+                        onChange={(e) => setWeightInput(e.target.value)}
+                        placeholder="0"
+                        className="flex-1 px-3 py-2 border border-border rounded-lg text-foreground bg-background"
+                      />
+                      <select className="px-3 py-2 border border-border rounded-lg text-foreground bg-background">
+                        <option>lbs</option>
+                        <option>kg</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <button
                   onClick={() => handleCompleteSet(idx)}
-                  disabled={!repsInput || !weightInput}
+                  disabled={!repsInput || (idx === sets.length - 1 && !weightInput)}
                   className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Complete Set

@@ -31,40 +31,34 @@ export default function SessionPage() {
   }, [dayId])
 
   const loadWorkoutDay = () => {
-    try {
-      const workouts = dataStore.getWorkouts()
-      const active = workouts.find((w) => w.isActive)
+    const workouts = dataStore.getWorkouts()
+    const active = workouts.find((w) => w.isActive)
 
-      if (!active) {
-        setIsLoading(false)
-        return
-      }
-
-      setWorkout(active)
-
-      if (dayId) {
-        const day = active.days.find((d) => d.id === dayId)
-        if (day && day.exercises) {
-          const sessionExercises: SessionExercise[] = day.exercises.map((ex) => ({
-            exercise: ex,
-            sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
-              setNumber: i + 1,
-              targetReps: ex.reps || 10,
-              actualReps: 0,
-              weight: 0,
-              weightUnit: 'lbs' as const,
-              completed: false,
-            })),
-          }))
-          setExercises(sessionExercises)
-        }
-        setIsLoading(false)
-      } else {
-        setIsLoading(false)
-      }
-    } catch (error) {
+    if (!active) {
       setIsLoading(false)
+      return
     }
+
+    setWorkout(active)
+
+    if (dayId) {
+      const day = active.days.find((d) => d.id === dayId)
+      if (day && day.exercises) {
+        const sessionExercises: SessionExercise[] = day.exercises.map((ex) => ({
+          exercise: ex,
+          sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
+            setNumber: i + 1,
+            targetReps: ex.reps || 10,
+            actualReps: 0,
+            weight: 0,
+            weightUnit: 'lbs' as const,
+            completed: false,
+          })),
+        }))
+        setExercises(sessionExercises)
+      }
+    }
+    setIsLoading(false)
   }
 
   const handleCompleteSet = (setIndex: number, actualReps: number, weight: number) => {
