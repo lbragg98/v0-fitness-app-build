@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { dataStore } from '@/lib/storage/storage-provider'
 import { generateWorkoutPlan } from '@/lib/workout/generator'

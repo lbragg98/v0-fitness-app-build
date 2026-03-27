@@ -1,5 +1,39 @@
 import type { NormalizedExercise } from '@/lib/types'
 
+// Fallback exercises when API is unavailable
+const FALLBACK_EXERCISES: NormalizedExercise[] = [
+  { id: 'bench-press', name: 'Barbell Bench Press', targetMuscle: 'chest', equipment: 'barbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'incline-press', name: 'Incline Dumbbell Press', targetMuscle: 'chest', equipment: 'dumbbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'cable-fly', name: 'Cable Fly', targetMuscle: 'chest', equipment: 'cable', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'push-up', name: 'Push-Up', targetMuscle: 'chest', equipment: 'body weight', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'deadlift', name: 'Barbell Deadlift', targetMuscle: 'back', equipment: 'barbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'lat-pulldown', name: 'Lat Pulldown', targetMuscle: 'back', equipment: 'cable', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'bent-over-row', name: 'Barbell Bent Over Row', targetMuscle: 'back', equipment: 'barbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'pull-up', name: 'Pull-Up', targetMuscle: 'back', equipment: 'body weight', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'overhead-press', name: 'Overhead Press', targetMuscle: 'shoulders', equipment: 'barbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'lateral-raise', name: 'Lateral Raise', targetMuscle: 'shoulders', equipment: 'dumbbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'face-pull', name: 'Face Pull', targetMuscle: 'shoulders', equipment: 'cable', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'barbell-curl', name: 'Barbell Curl', targetMuscle: 'biceps', equipment: 'barbell', bodyPart: 'arms', gifUrl: '' },
+  { id: 'hammer-curl', name: 'Hammer Curl', targetMuscle: 'biceps', equipment: 'dumbbell', bodyPart: 'arms', gifUrl: '' },
+  { id: 'tricep-pushdown', name: 'Tricep Pushdown', targetMuscle: 'triceps', equipment: 'cable', bodyPart: 'arms', gifUrl: '' },
+  { id: 'skull-crusher', name: 'Skull Crusher', targetMuscle: 'triceps', equipment: 'barbell', bodyPart: 'arms', gifUrl: '' },
+  { id: 'squat', name: 'Barbell Squat', targetMuscle: 'quadriceps', equipment: 'barbell', bodyPart: 'legs', gifUrl: '' },
+  { id: 'leg-press', name: 'Leg Press', targetMuscle: 'quadriceps', equipment: 'machine', bodyPart: 'legs', gifUrl: '' },
+  { id: 'lunges', name: 'Walking Lunges', targetMuscle: 'quadriceps', equipment: 'body weight', bodyPart: 'legs', gifUrl: '' },
+  { id: 'leg-curl', name: 'Lying Leg Curl', targetMuscle: 'hamstrings', equipment: 'machine', bodyPart: 'legs', gifUrl: '' },
+  { id: 'romanian-deadlift', name: 'Romanian Deadlift', targetMuscle: 'hamstrings', equipment: 'barbell', bodyPart: 'legs', gifUrl: '' },
+  { id: 'calf-raise', name: 'Standing Calf Raise', targetMuscle: 'calves', equipment: 'machine', bodyPart: 'legs', gifUrl: '' },
+  { id: 'plank', name: 'Plank', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'core', gifUrl: '' },
+  { id: 'crunch', name: 'Crunch', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'core', gifUrl: '' },
+  { id: 'leg-raise', name: 'Hanging Leg Raise', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'core', gifUrl: '' },
+  { id: 'cable-crunch', name: 'Cable Crunch', targetMuscle: 'abs', equipment: 'cable', bodyPart: 'core', gifUrl: '' },
+  { id: 'hip-thrust', name: 'Hip Thrust', targetMuscle: 'glutes', equipment: 'barbell', bodyPart: 'legs', gifUrl: '' },
+  { id: 'glute-bridge', name: 'Glute Bridge', targetMuscle: 'glutes', equipment: 'body weight', bodyPart: 'legs', gifUrl: '' },
+  { id: 'dumbbell-row', name: 'Single Arm Dumbbell Row', targetMuscle: 'back', equipment: 'dumbbell', bodyPart: 'upper body', gifUrl: '' },
+  { id: 'dip', name: 'Dip', targetMuscle: 'triceps', equipment: 'body weight', bodyPart: 'arms', gifUrl: '' },
+  { id: 'shrug', name: 'Barbell Shrug', targetMuscle: 'traps', equipment: 'barbell', bodyPart: 'upper body', gifUrl: '' },
+]
+
 // RapidAPI AscendAPI configuration
 const API_HOST = 'edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
 const API_KEY = process.env.EXERCISEDB_API_KEY || ''
@@ -120,8 +154,8 @@ export async function getAllExercises(name?: string, keywords?: string): Promise
     
     return exercises.map(normalizeExercise)
   } catch (error) {
-    console.error('[v0] Error fetching all exercises:', error)
-    return []
+    console.error('[v0] Error fetching all exercises, using fallback:', error)
+    return FALLBACK_EXERCISES
   }
 }
 
