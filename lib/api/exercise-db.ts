@@ -31,6 +31,13 @@ export interface NormalizedExercise {
  * Normalize ExerciseDB response to our internal format
  */
 function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
+  console.log('[v0] Normalizing:', {
+    name: exercise.name,
+    target: exercise.target,
+    bodyPart: exercise.bodyPart,
+    equipment: exercise.equipment,
+    keys: Object.keys(exercise)
+  })
   return {
     id: exercise.exerciseId || String(Math.random()),
     name: exercise.name,
@@ -198,20 +205,28 @@ export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Prom
 export async function getAllExercises(limit = 30, offset = 0): Promise<NormalizedExercise[]> {
   try {
     const url = `${EXERCISE_DB_API}/api/v1/exercises?limit=${limit}&offset=${offset}`
+    console.log('[v0] Fetching all exercises from:', url)
     const response = await fetch(url)
 
     if (!response.ok) {
+      console.log('[v0] API not OK, returning fallback')
       return FALLBACK_EXERCISES
     }
 
     const rawData = await response.json()
+    console.log('[v0] Raw response type:', Array.isArray(rawData) ? 'array' : typeof rawData)
+    console.log('[v0] First raw item:', JSON.stringify(rawData[0] || {}).slice(0, 300))
+    
     const exercises = extractExercises(rawData)
+    console.log('[v0] Extracted exercises:', exercises.length)
     
     if (exercises.length === 0) {
       return FALLBACK_EXERCISES
     }
     
-    return exercises.map(normalizeExercise)
+    const normalized = exercises.map(normalizeExercise)
+    console.log('[v0] Normalized first:', JSON.stringify(normalized[0]).slice(0, 300))
+    return normalized
   } catch (error) {
     console.error('[v0] Error fetching all exercises:', error)
     return FALLBACK_EXERCISES
