@@ -102,19 +102,23 @@ export function generateWorkoutPlan(
         const isCompound = isCompoundExercise(exercise, limitations)
         const exerciseType = isCompound ? 'compound' : exIndex < 3 ? 'secondary' : 'accessory'
         const reps = calculateRepRange(intensity, exerciseType)
-        const sets = calculateSets(intensity, exerciseType)
+        const setsCount = calculateSets(intensity, exerciseType)
 
         return {
           id: exercise.id,
-          exerciseName: exercise.name,
-          sets,
+          name: exercise.name,
+          sets: setsCount,
+          reps: reps.min,
           repsMin: reps.min,
           repsMax: reps.max,
           restSeconds: calculateRestPeriod(intensity, exerciseType),
           notes: '',
-          targetMuscle: exercise.targetMuscle,
-          equipment: exercise.equipment,
-          bodyPart: exercise.bodyPart,
+          targetMuscle: exercise.targetMuscle || '',
+          equipment: exercise.equipment ? [exercise.equipment] : [],
+          bodyPart: exercise.bodyPart || '',
+          difficulty: 'intermediate' as const,
+          instructions: [],
+          exerciseType: exerciseType === 'compound' ? 'compound' as const : 'isolation' as const,
         }
       }),
     }

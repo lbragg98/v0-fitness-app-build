@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { dataStore } from '@/lib/storage/storage-provider'
 import type { Workout, Exercise, ExerciseSet } from '@/lib/types'
 import { ExerciseView } from '@/components/session/exercise-view'
 import { SetTracker } from '@/components/session/set-tracker'
-import { TimedExercise } from '@/components/session/timed-exercise'
 
 interface SessionExercise {
   exercise: Exercise
@@ -24,7 +23,6 @@ export default function SessionPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [sessionStartTime] = useState(Date.now())
   const [userSettings, setUserSettings] = useState<any>(null)
-  const [showTimedExercise, setShowTimedExercise] = useState(false)
 
   useEffect(() => {
     loadWorkoutDay()
@@ -60,12 +58,7 @@ export default function SessionPage() {
           }))
           setExercises(sessionExercises)
         }
-      }
-    } catch (error) {
-      console.error('[v0] Error loading workout day:', error)
-    } finally {
-          setIsLoading(false)
-        }
+        setIsLoading(false)
       } else {
         setIsLoading(false)
       }
@@ -88,7 +81,6 @@ export default function SessionPage() {
     exercises.every((ex) => ex.sets.every((set) => set.completed))
 
   const handleFinishWorkout = () => {
-    // Save workout session
     const session = {
       id: `session-${Date.now()}`,
       planId: workout?.id || '',
@@ -110,7 +102,6 @@ export default function SessionPage() {
     try {
       dataStore.saveWorkoutSession(session)
 
-      // Save workout completion for feed
       const completion = {
         id: `completion-${Date.now()}`,
         sessionId: session.id,
@@ -127,7 +118,7 @@ export default function SessionPage() {
 
       router.push('/activity')
     } catch (error) {
-      console.error('[v0] Error saving session:', error)
+      // Silent fail
     }
   }
 
