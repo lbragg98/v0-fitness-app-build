@@ -1,21 +1,16 @@
-import type { UserSettings, WorkoutPlan, WorkoutSession, WorkoutCompletion, Photo } from '@/lib/types'
+import type { UserSettings, Workout, WorkoutSession, WorkoutCompletion, Photo } from '@/lib/types'
 import { storage } from './local-storage'
-
-/**
- * Abstract interface for data persistence
- * Supports localStorage now, easy to swap for Supabase later
- */
 
 interface DataStore {
   // User settings
   getUserSettings(): UserSettings | null
   saveUserSettings(settings: UserSettings): void
   
-  // Workout plans
-  getWorkoutPlan(planId: string): WorkoutPlan | null
-  getAllWorkoutPlans(): WorkoutPlan[]
-  saveWorkoutPlan(plan: WorkoutPlan): void
-  deleteWorkoutPlan(planId: string): void
+  // Workouts
+  getWorkout(workoutId: string): Workout | null
+  getWorkouts(): Workout[]
+  saveWorkout(workout: Workout): void
+  deleteWorkout(workoutId: string): void
   
   // Workout sessions (history)
   getWorkoutSession(sessionId: string): WorkoutSession | null
@@ -47,30 +42,30 @@ class LocalDataStore implements DataStore {
     storage.set('user_settings', settings)
   }
 
-  // Workout plans
-  getWorkoutPlan(planId: string): WorkoutPlan | null {
-    const plans = this.getAllWorkoutPlans()
-    return plans.find((p) => p.id === planId) || null
+  // Workouts
+  getWorkout(workoutId: string): Workout | null {
+    const workouts = this.getWorkouts()
+    return workouts.find((w) => w.id === workoutId) || null
   }
 
-  getAllWorkoutPlans(): WorkoutPlan[] {
-    return storage.get<WorkoutPlan[]>('workout_plans') || []
+  getWorkouts(): Workout[] {
+    return storage.get<Workout[]>('workouts') || []
   }
 
-  saveWorkoutPlan(plan: WorkoutPlan): void {
-    const plans = this.getAllWorkoutPlans()
-    const index = plans.findIndex((p) => p.id === plan.id)
+  saveWorkout(workout: Workout): void {
+    const workouts = this.getWorkouts()
+    const index = workouts.findIndex((w) => w.id === workout.id)
     if (index >= 0) {
-      plans[index] = plan
+      workouts[index] = workout
     } else {
-      plans.push(plan)
+      workouts.push(workout)
     }
-    storage.set('workout_plans', plans)
+    storage.set('workouts', workouts)
   }
 
-  deleteWorkoutPlan(planId: string): void {
-    const plans = this.getAllWorkoutPlans().filter((p) => p.id !== planId)
-    storage.set('workout_plans', plans)
+  deleteWorkout(workoutId: string): void {
+    const workouts = this.getWorkouts().filter((w) => w.id !== workoutId)
+    storage.set('workouts', workouts)
   }
 
   // Workout sessions

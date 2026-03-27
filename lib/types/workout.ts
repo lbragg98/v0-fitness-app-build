@@ -3,21 +3,22 @@ import type { Exercise, ExerciseSet } from './exercise'
 export interface WorkoutDay {
   id: string
   dayNumber: number
-  dayName: string
+  name: string
   muscleGroups: string[]
   exercises: Exercise[]
-  isRestDay: boolean
-  estimatedDuration: number // in minutes
+  isRestDay?: boolean
+  estimatedDuration?: number
 }
 
-export interface WorkoutPlan {
+export interface Workout {
   id: string
   name: string
-  frequency: number // 3, 4, 5, or 6 days
+  description?: string
+  frequency: number
   days: WorkoutDay[]
   createdAt: number
   updatedAt: number
-  isActive: boolean
+  isActive?: boolean
 }
 
 export interface WorkoutSession {

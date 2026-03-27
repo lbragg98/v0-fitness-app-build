@@ -16,11 +16,19 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Link
+            href="/profile"
+            className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-card-foreground mb-2">Profile</h2>
+            <p className="text-muted-foreground text-sm">View stats and generate workout plans</p>
+          </Link>
+
+          <Link
             href="/settings"
             className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-card-foreground mb-2">Settings</h2>
-            <p className="text-muted-foreground text-sm">Configure your fitness preferences and goals</p>
+            <p className="text-muted-foreground text-sm">Configure your fitness preferences</p>
           </Link>
 
           <Link
@@ -28,7 +36,7 @@ export default function Home() {
             className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-card-foreground mb-2">Test ExerciseDB</h2>
-            <p className="text-muted-foreground text-sm">Browse exercises by muscle group (testing)</p>
+            <p className="text-muted-foreground text-sm">Browse exercises by muscle group</p>
           </Link>
         </div>
 
@@ -48,8 +56,8 @@ export default function Home() {
               <span className="text-foreground">Step 3: ExerciseDB API Integration</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-muted-foreground">○</span>
-              <span className="text-muted-foreground">Step 4: Workout Generator</span>
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 4: Workout Generator</span>
             </li>
           </ul>
         </div>
