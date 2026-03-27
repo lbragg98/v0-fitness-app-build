@@ -23,10 +23,13 @@ export default function Home() {
             <p className="text-muted-foreground text-sm">Configure your fitness preferences and goals</p>
           </Link>
 
-          <div className="p-6 bg-card border border-border rounded-lg">
-            <h2 className="text-xl font-bold text-card-foreground mb-2">More Coming</h2>
-            <p className="text-muted-foreground text-sm">Additional features in development</p>
-          </div>
+          <Link
+            href="/test-exercises"
+            className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-card-foreground mb-2">Test ExerciseDB</h2>
+            <p className="text-muted-foreground text-sm">Browse exercises by muscle group (testing)</p>
+          </Link>
         </div>
 
         <div className="mt-8 p-6 bg-secondary rounded-lg">
@@ -41,8 +44,8 @@ export default function Home() {
               <span className="text-foreground">Step 2: Settings Page</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-muted-foreground">○</span>
-              <span className="text-muted-foreground">Step 3: ExerciseDB API Integration</span>
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 3: ExerciseDB API Integration</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-muted-foreground">○</span>
