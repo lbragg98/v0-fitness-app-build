@@ -1,22 +1,45 @@
-import type { UserSettings, NormalizedExercise } from './index'
+import type { NormalizedExercise } from '@/lib/types'
 
-const EXERCISE_DB_API = 'https://api.api-ninjas.com/v1'
+// RapidAPI AscendAPI configuration
+const API_HOST = 'edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
+const API_KEY = process.env.EXERCISEDB_API_KEY || ''
 
-export interface ExerciseDBExercise {
+interface ExerciseDBExercise {
   name: string
-  type?: string
   muscle?: string
-  equipment?: string
-  difficulty?: string
-  instructions?: string
-  // Legacy field names from other APIs
   target?: string
+  equipment?: string
   bodyPart?: string
-  exerciseId?: string
+  type?: string
   gifUrl?: string
   imageUrl?: string
   videoUrl?: string
   secondaryMuscles?: string[]
+  instructions?: string
+  exerciseId?: string
+}
+
+/**
+ * Make authenticated request to RapidAPI AscendAPI
+ * Uses environment variable EXERCISEDB_API_KEY for authentication
+ */
+async function fetchFromAPI(path: string): Promise<unknown> {
+  const url = `https://${API_HOST}${path}`
+  
+  const response = await fetch(url, {
+    headers: {
+      'x-rapidapi-key': API_KEY,
+      'x-rapidapi-host': API_HOST,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    console.error(`[v0] API error: ${response.status} for path: ${path}`)
+    throw new Error(`AscendAPI error: ${response.status}`)
+  }
+
+  return response.json()
 }
 
 /**
@@ -29,7 +52,7 @@ function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
     targetMuscle: ex.muscle || ex.target || '',
     equipment: ex.equipment || '',
     bodyPart: ex.type || ex.bodyPart || '',
-    gifUrl: ex.gifUrl || ex.imageUrl || '',
+    gifUrl: ex.imageUrl || ex.gifUrl || '',
     videoUrl: ex.videoUrl,
     secondaryMuscles: ex.secondaryMuscles,
     instructions: ex.instructions ? [ex.instructions] : undefined,
@@ -37,53 +60,94 @@ function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
 }
 
 /**
- * Fallback exercises with full data
+ * Search exercises by keyword
  */
-const FALLBACK_EXERCISES: NormalizedExercise[] = [
-  {
-    id: 'bench-press',
-    name: 'Barbell Bench Press',
-    targetMuscle: 'chest',
-    equipment: 'barbell',
-    bodyPart: 'chest',
-    gifUrl: 'https://api.api-ninjas.com/v1/exercises?muscle=chest&offset=0',
-    instructions: ['Lie on a flat bench', 'Grip the bar slightly wider than shoulder width', 'Lower the bar to your chest', 'Press back up to starting position'],
-  },
-  {
-    id: 'squat',
-    name: 'Barbell Squat',
-    targetMuscle: 'quadriceps',
-    equipment: 'barbell',
-    bodyPart: 'legs',
-    instructions: ['Position bar on upper back', 'Lower your body by bending knees', 'Keep chest up and core tight', 'Return to standing position'],
-  },
-  {
-    id: 'deadlift',
-    name: 'Deadlift',
-    targetMuscle: 'back',
-    equipment: 'barbell',
-    bodyPart: 'back',
-    instructions: ['Stand with feet hip-width apart', 'Grip bar with hands just outside legs', 'Keep back straight and lift', 'Return bar to ground with control'],
-  },
-]
+export async function searchExercises(query: string): Promise<NormalizedExercise[]> {
+  try {
+    const data = await fetchFromAPI(`/api/v1/exercises/search?search=${encodeURIComponent(query)}`)
+    
+    let exercises: ExerciseDBExercise[] = []
+    if (Array.isArray(data)) {
+      exercises = data
+    } else if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      if (Array.isArray(obj.exercises)) {
+        exercises = obj.exercises
+      } else if (Array.isArray(obj.data)) {
+        exercises = obj.data
+      } else if (Array.isArray(obj.results)) {
+        exercises = obj.results
+      }
+    }
+    
+    return exercises.map(normalizeExercise)
+  } catch (error) {
+    console.error('[v0] Error searching exercises:', error)
+    return []
+  }
+}
+
+/**
+ * Fetch exercises with optional filters
+ */
+export async function getAllExercises(name?: string, keywords?: string): Promise<NormalizedExercise[]> {
+  try {
+    let path = '/api/v1/exercises'
+    const params = new URLSearchParams()
+    
+    if (name) params.append('name', name)
+    if (keywords) params.append('keywords', keywords)
+    
+    if (params.toString()) {
+      path += '?' + params.toString()
+    }
+    
+    const data = await fetchFromAPI(path)
+    
+    let exercises: ExerciseDBExercise[] = []
+    if (Array.isArray(data)) {
+      exercises = data
+    } else if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      if (Array.isArray(obj.exercises)) {
+        exercises = obj.exercises
+      } else if (Array.isArray(obj.data)) {
+        exercises = obj.data
+      } else if (Array.isArray(obj.results)) {
+        exercises = obj.results
+      }
+    }
+    
+    return exercises.map(normalizeExercise)
+  } catch (error) {
+    console.error('[v0] Error fetching all exercises:', error)
+    return []
+  }
+}
 
 /**
  * Fetch exercises by muscle group
  */
 export async function getExercisesByMuscle(muscle: string): Promise<NormalizedExercise[]> {
   try {
-    const url = `${EXERCISE_DB_API}/exercises?muscle=${encodeURIComponent(muscle)}`
-    const response = await fetch(url)
+    const data = await fetchFromAPI(`/api/v1/exercises?muscle=${encodeURIComponent(muscle)}`)
     
-    if (!response.ok) return filterFallbackByMuscle(muscle)
+    let exercises: ExerciseDBExercise[] = []
+    if (Array.isArray(data)) {
+      exercises = data
+    } else if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      if (Array.isArray(obj.exercises)) {
+        exercises = obj.exercises
+      } else if (Array.isArray(obj.data)) {
+        exercises = obj.data
+      }
+    }
     
-    const data = await response.json()
-    if (!Array.isArray(data)) return filterFallbackByMuscle(muscle)
-    
-    return data.map(normalizeExercise)
+    return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by muscle:', error)
-    return filterFallbackByMuscle(muscle)
+    return []
   }
 }
 
@@ -92,18 +156,24 @@ export async function getExercisesByMuscle(muscle: string): Promise<NormalizedEx
  */
 export async function getExercisesByEquipment(equipment: string): Promise<NormalizedExercise[]> {
   try {
-    const url = `${EXERCISE_DB_API}/exercises?equipment=${encodeURIComponent(equipment)}`
-    const response = await fetch(url)
+    const data = await fetchFromAPI(`/api/v1/exercises?equipment=${encodeURIComponent(equipment)}`)
     
-    if (!response.ok) return filterFallbackByEquipment(equipment)
+    let exercises: ExerciseDBExercise[] = []
+    if (Array.isArray(data)) {
+      exercises = data
+    } else if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      if (Array.isArray(obj.exercises)) {
+        exercises = obj.exercises
+      } else if (Array.isArray(obj.data)) {
+        exercises = obj.data
+      }
+    }
     
-    const data = await response.json()
-    if (!Array.isArray(data)) return filterFallbackByEquipment(equipment)
-    
-    return data.map(normalizeExercise)
+    return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by equipment:', error)
-    return filterFallbackByEquipment(equipment)
+    return []
   }
 }
 
@@ -112,92 +182,75 @@ export async function getExercisesByEquipment(equipment: string): Promise<Normal
  */
 export async function getExercisesByBodyPart(bodyPart: string): Promise<NormalizedExercise[]> {
   try {
-    const url = `${EXERCISE_DB_API}/exercises?type=${encodeURIComponent(bodyPart)}`
-    const response = await fetch(url)
+    const data = await fetchFromAPI(`/api/v1/exercises?bodyPart=${encodeURIComponent(bodyPart)}`)
     
-    if (!response.ok) return filterFallbackByBodyPart(bodyPart)
+    let exercises: ExerciseDBExercise[] = []
+    if (Array.isArray(data)) {
+      exercises = data
+    } else if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      if (Array.isArray(obj.exercises)) {
+        exercises = obj.exercises
+      } else if (Array.isArray(obj.data)) {
+        exercises = obj.data
+      }
+    }
     
-    const data = await response.json()
-    if (!Array.isArray(data)) return filterFallbackByBodyPart(bodyPart)
-    
-    return data.map(normalizeExercise)
+    return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by body part:', error)
-    return filterFallbackByBodyPart(bodyPart)
+    return []
   }
 }
 
 /**
- * Fetch all exercises with pagination
- */
-export async function getAllExercises(limit = 30, offset = 0): Promise<NormalizedExercise[]> {
-  try {
-    const url = `${EXERCISE_DB_API}/exercises?limit=${limit}&offset=${offset}`
-    const response = await fetch(url)
-    
-    if (!response.ok) return FALLBACK_EXERCISES
-    
-    const data = await response.json()
-    if (!Array.isArray(data)) return FALLBACK_EXERCISES
-    
-    return data.map(normalizeExercise)
-  } catch (error) {
-    console.error('[v0] Error fetching all exercises:', error)
-    return FALLBACK_EXERCISES
-  }
-}
-
-/**
- * Get list of available muscles
+ * List all available muscles
  */
 export async function getMuscles(): Promise<string[]> {
-  const muscles = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'legs', 'quadriceps', 'hamstrings', 'glutes']
-  return muscles
-}
-
-/**
- * Get list of available equipment
- */
-export async function getEquipment(): Promise<string[]> {
-  const equipment = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'kettlebell', 'resistance band']
-  return equipment
-}
-
-/**
- * Get list of available body parts
- */
-export async function getBodyParts(): Promise<string[]> {
-  const bodyParts = ['chest', 'back', 'shoulders', 'arms', 'forearms', 'legs', 'calves', 'core', 'full body']
-  return bodyParts
-}
-
-/**
- * Filter fallback exercises by muscle
- */
-function filterFallbackByMuscle(muscle: string): NormalizedExercise[] {
-  return FALLBACK_EXERCISES.filter(ex => ex.targetMuscle.toLowerCase().includes(muscle.toLowerCase()))
-}
-
-/**
- * Normalize exercise to our internal format
- */
-function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
-  return {
-    id: ex.name + (ex.muscle || ''),
-    name: ex.name,
-    targetMuscle: ex.muscle || ex.target || '',
-    equipment: ex.equipment || '',
-    bodyPart: ex.type || ex.bodyPart || '',
-    gifUrl: ex.gifUrl || ex.imageUrl || '',
-    videoUrl: ex.videoUrl,
-    secondaryMuscles: ex.secondaryMuscles,
-    instructions: ex.instructions ? [ex.instructions] : undefined,
+  try {
+    const data = await fetchFromAPI('/api/v1/muscles')
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('[v0] Error fetching muscles:', error)
+    return []
   }
 }
 
 /**
- * Filter fallback exercises by body part
+ * List all available body parts
  */
-function filterFallbackByBodyPart(bodyPart: string): NormalizedExercise[] {
-  return FALLBACK_EXERCISES.filter(ex => ex.bodyPart.toLowerCase().includes(bodyPart.toLowerCase()))
+export async function getBodyParts(): Promise<string[]> {
+  try {
+    const data = await fetchFromAPI('/api/v1/bodyparts')
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('[v0] Error fetching body parts:', error)
+    return []
+  }
+}
+
+/**
+ * List all available equipment
+ */
+export async function getEquipment(): Promise<string[]> {
+  try {
+    const data = await fetchFromAPI('/api/v1/equipments')
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('[v0] Error fetching equipment:', error)
+    return []
+  }
+}
+
+/**
+ * List all exercise types
+ */
+export async function getExerciseTypes(): Promise<string[]> {
+  try {
+    const data = await fetchFromAPI('/api/v1/exercisetypes')
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('[v0] Error fetching exercise types:', error)
+    return []
+  }
 }
