@@ -35,9 +35,17 @@ export default function ProfilePage() {
     try {
       const exercises = await getAllExercises()
       const workout = generateWorkoutPlan(userSettings, exercises)
-
+      
+      // Mark new workout as active, deactivate others
+      workout.isActive = true
+      const updatedWorkouts = workouts.map(w => ({ ...w, isActive: false }))
+      
       dataStore.saveWorkout(workout)
-      setWorkouts([...workouts, workout])
+      updatedWorkouts.forEach(w => {
+        if (w.id !== workout.id) dataStore.saveWorkout(w)
+      })
+      
+      setWorkouts([...updatedWorkouts, workout])
     } catch (err) {
       setError('Failed to generate workout plan. Please try again.')
       console.error('[v0] Generate workout error:', err)

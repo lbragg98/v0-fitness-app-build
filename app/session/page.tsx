@@ -38,7 +38,8 @@ export default function SessionPage() {
       const active = workouts.find((w) => w.isActive)
 
       if (!active) {
-        throw new Error('No active workout')
+        setIsLoading(false)
+        return
       }
 
       setWorkout(active)
@@ -63,6 +64,12 @@ export default function SessionPage() {
     } catch (error) {
       console.error('[v0] Error loading workout day:', error)
     } finally {
+          setIsLoading(false)
+        }
+      } else {
+        setIsLoading(false)
+      }
+    } catch (error) {
       setIsLoading(false)
     }
   }
