@@ -9,11 +9,6 @@ import type { UserSettings, Workout, NormalizedExercise } from '@/lib/types'
 import { StatsCard } from '@/components/profile/stats-card'
 import { ProfileFeed } from '@/components/profile/activity-feed'
 
-export const metadata = {
-  title: 'Profile - FitFlow',
-  description: 'Your fitness profile and stats',
-}
-
 export default function ProfilePage() {
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null)
   const [workouts, setWorkouts] = useState<Workout[]>([])
