@@ -7,6 +7,7 @@ import { generateWorkoutPlan } from '@/lib/workout/generator'
 import { getAllExercises } from '@/lib/api/exercise-db'
 import type { UserSettings, Workout, NormalizedExercise } from '@/lib/types'
 import { StatsCard } from '@/components/profile/stats-card'
+import { ProfileFeed } from '@/components/profile/activity-feed'
 
 export const metadata = {
   title: 'Profile - FitFlow',
@@ -135,6 +136,10 @@ export default function ProfilePage() {
             <p className="text-muted-foreground mb-4">No workout plans yet. Generate one to get started!</p>
           </div>
         )}
+
+        <div className="mt-12 pt-8 border-t border-border">
+          <ProfileFeed />
+        </div>
       </div>
     </main>
   )

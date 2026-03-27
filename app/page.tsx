@@ -14,13 +14,29 @@ export default function Home() {
           <p className="text-xl text-muted-foreground">Your Personal Fitness Companion</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Link
             href="/profile"
             className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-card-foreground mb-2">Profile</h2>
             <p className="text-muted-foreground text-sm">View stats and generate workout plans</p>
+          </Link>
+
+          <Link
+            href="/activity"
+            className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-card-foreground mb-2">Activity</h2>
+            <p className="text-muted-foreground text-sm">Weekly schedule and daily plans</p>
+          </Link>
+
+          <Link
+            href="/workouts"
+            className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-card-foreground mb-2">Workouts</h2>
+            <p className="text-muted-foreground text-sm">Manage your workout library</p>
           </Link>
 
           <Link
@@ -58,6 +74,26 @@ export default function Home() {
             <li className="flex items-center gap-2">
               <span className="text-green-600 font-bold">✓</span>
               <span className="text-foreground">Step 4: Workout Generator</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 5: Activity & Calendar View</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 7: Step-by-Step Workout Execution</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 8: Break Timer & Timed Exercises</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 9: Profile Feed & Progress Photos</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-green-600 font-bold">✓</span>
+              <span className="text-foreground">Step 10: Polish & Empty States</span>
             </li>
           </ul>
         </div>
