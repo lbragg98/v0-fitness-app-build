@@ -15,33 +15,44 @@ interface Exercise {
 
 export default function TestExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
+  const [bodyParts, setBodyParts] = useState<string[]>([])
   const [muscles, setMuscles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
-  const [selectedMuscle, setSelectedMuscle] = useState<string>('')
+  const [selectedFilter, setSelectedFilter] = useState<string>('')
+  const [filterType, setFilterType] = useState<'bodypart' | 'muscle'>('bodypart')
 
-  // Fetch available muscles on mount
+  // Fetch available body parts and muscles on mount
   useEffect(() => {
-    const fetchMuscles = async () => {
+    const fetchLists = async () => {
       try {
-        const response = await fetch('/api/exercises?type=list&category=muscles')
-        if (response.ok) {
-          const data = await response.json()
-          setMuscles(data)
+        const [bodyPartsRes, musclesRes] = await Promise.all([
+          fetch('/api/exercises?type=list&category=bodyparts'),
+          fetch('/api/exercises?type=list&category=muscles')
+        ])
+        
+        if (bodyPartsRes.ok) {
+          const data = await bodyPartsRes.json()
+          setBodyParts(Array.isArray(data) ? data : [])
+        }
+        if (musclesRes.ok) {
+          const data = await musclesRes.json()
+          setMuscles(Array.isArray(data) ? data : [])
         }
       } catch (err) {
-        console.error('[v0] Error fetching muscles:', err)
+        console.error('[v0] Error fetching filter lists:', err)
       }
     }
-    fetchMuscles()
+    fetchLists()
   }, [])
 
-  const fetchExercises = async (muscle: string) => {
+  const fetchByFilter = async (value: string, type: 'bodypart' | 'muscle') => {
     setLoading(true)
     setError('')
-    setSelectedMuscle(muscle)
+    setSelectedFilter(value)
+    setFilterType(type)
     try {
-      const response = await fetch(`/api/exercises?type=muscle&value=${encodeURIComponent(muscle)}`)
+      const response = await fetch(`/api/exercises?type=${type}&value=${encodeURIComponent(value)}&limit=20`)
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`)
@@ -51,6 +62,7 @@ export default function TestExercisesPage() {
       setExercises(Array.isArray(data) ? data : [])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
+      console.error('[v0] Error fetching exercises:', message)
       setError(message)
     } finally {
       setLoading(false)
@@ -60,7 +72,7 @@ export default function TestExercisesPage() {
   const fetchAllExercises = async () => {
     setLoading(true)
     setError('')
-    setSelectedMuscle('all')
+    setSelectedFilter('all')
     try {
       const response = await fetch('/api/exercises?type=all&limit=30')
       
@@ -72,16 +84,22 @@ export default function TestExercisesPage() {
       setExercises(Array.isArray(data) ? data : [])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
+      console.error('[v0] Error fetching all exercises:', message)
       setError(message)
     } finally {
       setLoading(false)
     }
   }
 
-  // Default muscle groups if API doesn't return list
+  // Fallback values
+  const displayBodyParts = bodyParts.length > 0 ? bodyParts : [
+    'back', 'cardio', 'chest', 'lower arms', 'lower legs',
+    'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'
+  ]
+  
   const displayMuscles = muscles.length > 0 ? muscles : [
-    'chest', 'back', 'shoulders', 'biceps', 'triceps', 
-    'forearms', 'glutes', 'hamstrings', 'quads', 'calves', 'abs'
+    'abs', 'biceps', 'calves', 'delts', 'glutes', 'hamstrings',
+    'lats', 'pectorals', 'quads', 'traps', 'triceps'
   ]
 
   return (
@@ -105,22 +123,44 @@ export default function TestExercisesPage() {
             </button>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-2">Or select a muscle group:</p>
-          <div className="flex flex-wrap gap-2">
-            {displayMuscles.map((muscle) => (
-              <button
-                key={muscle}
-                onClick={() => fetchExercises(muscle)}
-                disabled={loading}
-                className={`px-3 py-1.5 rounded-md text-sm transition-all ${
-                  selectedMuscle === muscle
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card border border-border text-foreground hover:bg-muted'
-                } disabled:opacity-50`}
-              >
-                {muscle}
-              </button>
-            ))}
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground mb-2">Filter by Body Part:</p>
+            <div className="flex flex-wrap gap-2">
+              {displayBodyParts.map((part) => (
+                <button
+                  key={part}
+                  onClick={() => fetchByFilter(part, 'bodypart')}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-md text-sm transition-all capitalize ${
+                    selectedFilter === part && filterType === 'bodypart'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border text-foreground hover:bg-muted'
+                  } disabled:opacity-50`}
+                >
+                  {part}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Filter by Target Muscle:</p>
+            <div className="flex flex-wrap gap-2">
+              {displayMuscles.map((muscle) => (
+                <button
+                  key={muscle}
+                  onClick={() => fetchByFilter(muscle, 'muscle')}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-md text-sm transition-all capitalize ${
+                    selectedFilter === muscle && filterType === 'muscle'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border text-foreground hover:bg-muted'
+                  } disabled:opacity-50`}
+                >
+                  {muscle}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -146,7 +186,7 @@ export default function TestExercisesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {exercises.map((exercise) => (
                 <div key={exercise.id} className="border border-border rounded-lg overflow-hidden bg-card hover:shadow-lg transition-shadow">
-                  {exercise.gifUrl && (
+                  {exercise.gifUrl ? (
                     <img
                       src={exercise.gifUrl}
                       alt={exercise.name}
@@ -155,13 +195,17 @@ export default function TestExercisesPage() {
                         e.currentTarget.style.display = 'none'
                       }}
                     />
+                  ) : (
+                    <div className="w-full h-48 bg-secondary flex items-center justify-center text-muted-foreground">
+                      No image
+                    </div>
                   )}
                   <div className="p-4">
                     <h3 className="font-semibold text-foreground capitalize mb-2">{exercise.name}</h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p><span className="font-medium">Target:</span> {exercise.targetMuscle}</p>
                       <p><span className="font-medium">Body Part:</span> {exercise.bodyPart}</p>
-                      {exercise.equipment && <p><span className="font-medium">Equipment:</span> {exercise.equipment}</p>}
+                      <p><span className="font-medium">Equipment:</span> {exercise.equipment}</p>
                     </div>
                   </div>
                 </div>
@@ -172,7 +216,7 @@ export default function TestExercisesPage() {
 
         {!loading && exercises.length === 0 && !error && (
           <div className="text-center py-12 text-muted-foreground">
-            <p>Click a muscle group or &quot;Load All&quot; to fetch exercises</p>
+            <p>Click a filter or &quot;Load All&quot; to fetch exercises</p>
           </div>
         )}
       </div>

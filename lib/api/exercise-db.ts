@@ -1,18 +1,16 @@
-const EXERCISE_DB_API = 'https://edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
-const RAPIDAPI_HOST = 'edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
-
-// Use the provided API key
-const API_KEY = process.env.EXERCISEDB_API_KEY || 'f05ef55276msh84240bd7ffa0aeep14febbjsna57c88773ab6'
+// Using the free, open-source ExerciseDB API v1
+// Docs: https://exercisedb.dev/docs
+const EXERCISE_DB_API = 'https://exercisedb.dev'
 
 export interface ExerciseDBExercise {
-  id: string
+  exerciseId: string
   name: string
   target: string
   equipment: string
   bodyPart: string
   gifUrl?: string
-  videoUrl?: string
   imageUrl?: string
+  videoUrl?: string
   secondaryMuscles?: string[]
   instructions?: string[]
 }
@@ -34,7 +32,7 @@ export interface NormalizedExercise {
  */
 function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
   return {
-    id: exercise.id,
+    id: exercise.exerciseId || String(Math.random()),
     name: exercise.name,
     targetMuscle: exercise.target,
     equipment: exercise.equipment,
@@ -47,33 +45,22 @@ function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
 }
 
 /**
- * Get common request headers
- */
-function getHeaders() {
-  return {
-    'x-rapidapi-key': API_KEY,
-    'x-rapidapi-host': RAPIDAPI_HOST,
-    'Content-Type': 'application/json',
-  }
-}
-
-/**
  * Fetch all muscles
  */
 export async function getMuscles(): Promise<string[]> {
   try {
-    const response = await fetch(`${EXERCISE_DB_API}/api/v1/muscles`, {
-      headers: getHeaders(),
-    })
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/muscles`)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] Muscles API error:', response.status)
+      return DEFAULT_MUSCLES
     }
 
-    return await response.json()
+    const data = await response.json()
+    return Array.isArray(data) ? data : DEFAULT_MUSCLES
   } catch (error) {
     console.error('[v0] Error fetching muscles:', error)
-    throw error
+    return DEFAULT_MUSCLES
   }
 }
 
@@ -82,18 +69,18 @@ export async function getMuscles(): Promise<string[]> {
  */
 export async function getEquipment(): Promise<string[]> {
   try {
-    const response = await fetch(`${EXERCISE_DB_API}/api/v1/equipments`, {
-      headers: getHeaders(),
-    })
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/equipments`)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] Equipment API error:', response.status)
+      return DEFAULT_EQUIPMENT
     }
 
-    return await response.json()
+    const data = await response.json()
+    return Array.isArray(data) ? data : DEFAULT_EQUIPMENT
   } catch (error) {
     console.error('[v0] Error fetching equipment:', error)
-    throw error
+    return DEFAULT_EQUIPMENT
   }
 }
 
@@ -102,18 +89,18 @@ export async function getEquipment(): Promise<string[]> {
  */
 export async function getBodyParts(): Promise<string[]> {
   try {
-    const response = await fetch(`${EXERCISE_DB_API}/api/v1/bodyparts`, {
-      headers: getHeaders(),
-    })
+    const response = await fetch(`${EXERCISE_DB_API}/api/v1/bodyparts`)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] BodyParts API error:', response.status)
+      return DEFAULT_BODYPARTS
     }
 
-    return await response.json()
+    const data = await response.json()
+    return Array.isArray(data) ? data : DEFAULT_BODYPARTS
   } catch (error) {
     console.error('[v0] Error fetching body parts:', error)
-    throw error
+    return DEFAULT_BODYPARTS
   }
 }
 
@@ -123,20 +110,22 @@ export async function getBodyParts(): Promise<string[]> {
  */
 export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
-    const response = await fetch(
-      `${EXERCISE_DB_API}/api/v1/muscles/${encodeURIComponent(muscle)}/exercises?limit=${limit}`,
-      { headers: getHeaders() }
-    )
+    const url = `${EXERCISE_DB_API}/api/v1/muscles/${encodeURIComponent(muscle)}/exercises?limit=${limit}`
+    console.log('[v0] Fetching exercises by muscle:', url)
+    
+    const response = await fetch(url)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] Muscle exercises API error:', response.status)
+      return filterFallbackByMuscle(muscle)
     }
 
-    const data: ExerciseDBExercise[] = await response.json()
-    return data.map(normalizeExercise)
+    const data = await response.json()
+    const exercises = extractExercises(data)
+    return exercises.length > 0 ? exercises.map(normalizeExercise) : filterFallbackByMuscle(muscle)
   } catch (error) {
     console.error('[v0] Error fetching exercises by muscle:', error)
-    throw error
+    return filterFallbackByMuscle(muscle)
   }
 }
 
@@ -146,20 +135,22 @@ export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<
  */
 export async function getExercisesByEquipment(equipment: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
-    const response = await fetch(
-      `${EXERCISE_DB_API}/api/v1/equipments/${encodeURIComponent(equipment)}/exercises?limit=${limit}`,
-      { headers: getHeaders() }
-    )
+    const url = `${EXERCISE_DB_API}/api/v1/equipments/${encodeURIComponent(equipment)}/exercises?limit=${limit}`
+    console.log('[v0] Fetching exercises by equipment:', url)
+    
+    const response = await fetch(url)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] Equipment exercises API error:', response.status)
+      return filterFallbackByEquipment(equipment)
     }
 
-    const data: ExerciseDBExercise[] = await response.json()
-    return data.map(normalizeExercise)
+    const data = await response.json()
+    const exercises = extractExercises(data)
+    return exercises.length > 0 ? exercises.map(normalizeExercise) : filterFallbackByEquipment(equipment)
   } catch (error) {
     console.error('[v0] Error fetching exercises by equipment:', error)
-    throw error
+    return filterFallbackByEquipment(equipment)
   }
 }
 
@@ -169,20 +160,22 @@ export async function getExercisesByEquipment(equipment: string, limit = 20): Pr
  */
 export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
-    const response = await fetch(
-      `${EXERCISE_DB_API}/api/v1/bodyparts/${encodeURIComponent(bodyPart)}/exercises?limit=${limit}`,
-      { headers: getHeaders() }
-    )
+    const url = `${EXERCISE_DB_API}/api/v1/bodyparts/${encodeURIComponent(bodyPart)}/exercises?limit=${limit}`
+    console.log('[v0] Fetching exercises by body part:', url)
+    
+    const response = await fetch(url)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] BodyPart exercises API error:', response.status)
+      return filterFallbackByBodyPart(bodyPart)
     }
 
-    const data: ExerciseDBExercise[] = await response.json()
-    return data.map(normalizeExercise)
+    const data = await response.json()
+    const exercises = extractExercises(data)
+    return exercises.length > 0 ? exercises.map(normalizeExercise) : filterFallbackByBodyPart(bodyPart)
   } catch (error) {
     console.error('[v0] Error fetching exercises by body part:', error)
-    throw error
+    return filterFallbackByBodyPart(bodyPart)
   }
 }
 
@@ -192,49 +185,124 @@ export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Prom
  */
 export async function getAllExercises(limit = 30, offset = 0): Promise<NormalizedExercise[]> {
   try {
-    const response = await fetch(
-      `${EXERCISE_DB_API}/api/v1/exercises?limit=${limit}&offset=${offset}`,
-      { headers: getHeaders() }
-    )
+    const url = `${EXERCISE_DB_API}/api/v1/exercises?limit=${limit}&offset=${offset}`
+    console.log('[v0] Fetching all exercises:', url)
+    
+    const response = await fetch(url)
 
     if (!response.ok) {
-      throw new Error(`ExerciseDB API error: ${response.status}`)
+      console.error('[v0] All exercises API error:', response.status)
+      return FALLBACK_EXERCISES
     }
 
-    const data: ExerciseDBExercise[] = await response.json()
-    return data.map(normalizeExercise)
+    const data = await response.json()
+    const exercises = extractExercises(data)
+    console.log('[v0] Found', exercises.length, 'exercises')
+    return exercises.length > 0 ? exercises.map(normalizeExercise) : FALLBACK_EXERCISES
   } catch (error) {
     console.error('[v0] Error fetching all exercises:', error)
-    throw error
+    return FALLBACK_EXERCISES
   }
 }
 
 /**
- * Fallback exercises for when API is unavailable
+ * Extract exercises array from various response formats
+ */
+function extractExercises(data: unknown): ExerciseDBExercise[] {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>
+    if (Array.isArray(obj.data)) return obj.data
+    if (Array.isArray(obj.exercises)) return obj.exercises
+    if (Array.isArray(obj.results)) return obj.results
+  }
+  return []
+}
+
+function filterFallbackByMuscle(muscle: string): NormalizedExercise[] {
+  return FALLBACK_EXERCISES.filter(e => 
+    e.targetMuscle.toLowerCase().includes(muscle.toLowerCase())
+  )
+}
+
+function filterFallbackByEquipment(equipment: string): NormalizedExercise[] {
+  return FALLBACK_EXERCISES.filter(e => 
+    e.equipment.toLowerCase().includes(equipment.toLowerCase())
+  )
+}
+
+function filterFallbackByBodyPart(bodyPart: string): NormalizedExercise[] {
+  return FALLBACK_EXERCISES.filter(e => 
+    e.bodyPart.toLowerCase().includes(bodyPart.toLowerCase())
+  )
+}
+
+// Default values when API is unavailable
+const DEFAULT_MUSCLES = [
+  'abductors', 'abs', 'adductors', 'biceps', 'calves', 'cardiovascular system',
+  'delts', 'forearms', 'glutes', 'hamstrings', 'lats', 'levator scapulae',
+  'pectorals', 'quads', 'serratus anterior', 'spine', 'traps', 'triceps', 'upper back'
+]
+
+const DEFAULT_EQUIPMENT = [
+  'assisted', 'band', 'barbell', 'body weight', 'bosu ball', 'cable',
+  'dumbbell', 'elliptical machine', 'ez barbell', 'hammer', 'kettlebell',
+  'leverage machine', 'medicine ball', 'olympic barbell', 'resistance band',
+  'roller', 'rope', 'skierg machine', 'sled machine', 'smith machine',
+  'stability ball', 'stationary bike', 'stepmill machine', 'tire',
+  'trap bar', 'upper body ergometer', 'weighted', 'wheel roller'
+]
+
+const DEFAULT_BODYPARTS = [
+  'back', 'cardio', 'chest', 'lower arms', 'lower legs',
+  'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'
+]
+
+/**
+ * Comprehensive fallback exercises for when API is unavailable
  */
 export const FALLBACK_EXERCISES: NormalizedExercise[] = [
-  {
-    id: 'fallback-1',
-    name: 'Barbell Bench Press',
-    targetMuscle: 'pectorals',
-    equipment: 'barbell',
-    bodyPart: 'chest',
-    gifUrl: '',
-  },
-  {
-    id: 'fallback-2',
-    name: 'Barbell Squat',
-    targetMuscle: 'quads',
-    equipment: 'barbell',
-    bodyPart: 'upper legs',
-    gifUrl: '',
-  },
-  {
-    id: 'fallback-3',
-    name: 'Deadlift',
-    targetMuscle: 'glutes',
-    equipment: 'barbell',
-    bodyPart: 'upper legs',
-    gifUrl: '',
-  },
+  // Chest
+  { id: 'fb-1', name: 'Barbell Bench Press', targetMuscle: 'pectorals', equipment: 'barbell', bodyPart: 'chest', gifUrl: '' },
+  { id: 'fb-2', name: 'Dumbbell Fly', targetMuscle: 'pectorals', equipment: 'dumbbell', bodyPart: 'chest', gifUrl: '' },
+  { id: 'fb-3', name: 'Push-Up', targetMuscle: 'pectorals', equipment: 'body weight', bodyPart: 'chest', gifUrl: '' },
+  { id: 'fb-4', name: 'Incline Dumbbell Press', targetMuscle: 'pectorals', equipment: 'dumbbell', bodyPart: 'chest', gifUrl: '' },
+  { id: 'fb-5', name: 'Cable Crossover', targetMuscle: 'pectorals', equipment: 'cable', bodyPart: 'chest', gifUrl: '' },
+  
+  // Back
+  { id: 'fb-6', name: 'Deadlift', targetMuscle: 'glutes', equipment: 'barbell', bodyPart: 'back', gifUrl: '' },
+  { id: 'fb-7', name: 'Lat Pulldown', targetMuscle: 'lats', equipment: 'cable', bodyPart: 'back', gifUrl: '' },
+  { id: 'fb-8', name: 'Barbell Row', targetMuscle: 'upper back', equipment: 'barbell', bodyPart: 'back', gifUrl: '' },
+  { id: 'fb-9', name: 'Pull-Up', targetMuscle: 'lats', equipment: 'body weight', bodyPart: 'back', gifUrl: '' },
+  { id: 'fb-10', name: 'Seated Cable Row', targetMuscle: 'upper back', equipment: 'cable', bodyPart: 'back', gifUrl: '' },
+  
+  // Shoulders
+  { id: 'fb-11', name: 'Overhead Press', targetMuscle: 'delts', equipment: 'barbell', bodyPart: 'shoulders', gifUrl: '' },
+  { id: 'fb-12', name: 'Lateral Raise', targetMuscle: 'delts', equipment: 'dumbbell', bodyPart: 'shoulders', gifUrl: '' },
+  { id: 'fb-13', name: 'Front Raise', targetMuscle: 'delts', equipment: 'dumbbell', bodyPart: 'shoulders', gifUrl: '' },
+  { id: 'fb-14', name: 'Face Pull', targetMuscle: 'delts', equipment: 'cable', bodyPart: 'shoulders', gifUrl: '' },
+  
+  // Arms
+  { id: 'fb-15', name: 'Barbell Curl', targetMuscle: 'biceps', equipment: 'barbell', bodyPart: 'upper arms', gifUrl: '' },
+  { id: 'fb-16', name: 'Tricep Pushdown', targetMuscle: 'triceps', equipment: 'cable', bodyPart: 'upper arms', gifUrl: '' },
+  { id: 'fb-17', name: 'Hammer Curl', targetMuscle: 'biceps', equipment: 'dumbbell', bodyPart: 'upper arms', gifUrl: '' },
+  { id: 'fb-18', name: 'Skull Crusher', targetMuscle: 'triceps', equipment: 'barbell', bodyPart: 'upper arms', gifUrl: '' },
+  
+  // Legs
+  { id: 'fb-19', name: 'Barbell Squat', targetMuscle: 'quads', equipment: 'barbell', bodyPart: 'upper legs', gifUrl: '' },
+  { id: 'fb-20', name: 'Leg Press', targetMuscle: 'quads', equipment: 'leverage machine', bodyPart: 'upper legs', gifUrl: '' },
+  { id: 'fb-21', name: 'Romanian Deadlift', targetMuscle: 'hamstrings', equipment: 'barbell', bodyPart: 'upper legs', gifUrl: '' },
+  { id: 'fb-22', name: 'Leg Curl', targetMuscle: 'hamstrings', equipment: 'leverage machine', bodyPart: 'upper legs', gifUrl: '' },
+  { id: 'fb-23', name: 'Calf Raise', targetMuscle: 'calves', equipment: 'leverage machine', bodyPart: 'lower legs', gifUrl: '' },
+  { id: 'fb-24', name: 'Lunge', targetMuscle: 'glutes', equipment: 'body weight', bodyPart: 'upper legs', gifUrl: '' },
+  
+  // Core
+  { id: 'fb-25', name: 'Crunch', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'waist', gifUrl: '' },
+  { id: 'fb-26', name: 'Plank', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'waist', gifUrl: '' },
+  { id: 'fb-27', name: 'Russian Twist', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'waist', gifUrl: '' },
+  { id: 'fb-28', name: 'Leg Raise', targetMuscle: 'abs', equipment: 'body weight', bodyPart: 'waist', gifUrl: '' },
+  { id: 'fb-29', name: 'Cable Woodchop', targetMuscle: 'abs', equipment: 'cable', bodyPart: 'waist', gifUrl: '' },
+  { id: 'fb-30', name: 'Ab Wheel Rollout', targetMuscle: 'abs', equipment: 'wheel roller', bodyPart: 'waist', gifUrl: '' },
 ]
