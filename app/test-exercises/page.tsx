@@ -11,6 +11,8 @@ interface Exercise {
   bodyPart: string
   gifUrl: string
   videoUrl?: string
+  secondaryMuscles?: string[]
+  instructions?: string[]
 }
 
 export default function TestExercisesPage() {
@@ -21,8 +23,11 @@ export default function TestExercisesPage() {
   const [error, setError] = useState<string>('')
   const [selectedFilter, setSelectedFilter] = useState<string>('')
   const [filterType, setFilterType] = useState<'bodypart' | 'muscle'>('bodypart')
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const LIMIT = 30
 
-  // Fetch available body parts and muscles on mount
   useEffect(() => {
     const fetchLists = async () => {
       try {
@@ -40,7 +45,7 @@ export default function TestExercisesPage() {
           setMuscles(Array.isArray(data) ? data : [])
         }
       } catch (err) {
-        console.error('[v0] Error fetching filter lists:', err)
+        console.error('Error fetching filter lists:', err)
       }
     }
     fetchLists()
@@ -51,47 +56,58 @@ export default function TestExercisesPage() {
     setError('')
     setSelectedFilter(value)
     setFilterType(type)
+    setOffset(0)
     try {
-      const response = await fetch(`/api/exercises?type=${type}&value=${encodeURIComponent(value)}&limit=20`)
+      const response = await fetch(`/api/exercises?type=${type}&value=${encodeURIComponent(value)}&limit=${LIMIT}`)
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`API error: ${response.status}`)
       
       const data = await response.json()
-      setExercises(Array.isArray(data) ? data : [])
+      const exerciseList = Array.isArray(data) ? data : []
+      setExercises(exerciseList)
+      setHasMore(exerciseList.length === LIMIT)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      console.error('[v0] Error fetching exercises:', message)
       setError(message)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchAllExercises = async () => {
+  const fetchAllExercises = async (newOffset = 0, append = false) => {
     setLoading(true)
     setError('')
-    setSelectedFilter('all')
+    if (!append) {
+      setSelectedFilter('all')
+      setOffset(0)
+    }
     try {
-      const response = await fetch('/api/exercises?type=all&limit=30')
+      const response = await fetch(`/api/exercises?type=all&limit=${LIMIT}&offset=${newOffset}`)
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`API error: ${response.status}`)
       
       const data = await response.json()
-      setExercises(Array.isArray(data) ? data : [])
+      const exerciseList = Array.isArray(data) ? data : []
+      
+      if (append) {
+        setExercises(prev => [...prev, ...exerciseList])
+      } else {
+        setExercises(exerciseList)
+      }
+      setOffset(newOffset)
+      setHasMore(exerciseList.length === LIMIT)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      console.error('[v0] Error fetching all exercises:', message)
       setError(message)
     } finally {
       setLoading(false)
     }
   }
 
-  // Fallback values
+  const loadMore = () => {
+    fetchAllExercises(offset + LIMIT, true)
+  }
+
   const displayBodyParts = bodyParts.length > 0 ? bodyParts : [
     'back', 'cardio', 'chest', 'lower arms', 'lower legs',
     'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'
@@ -115,12 +131,15 @@ export default function TestExercisesPage() {
           
           <div className="mb-4">
             <button
-              onClick={fetchAllExercises}
+              onClick={() => fetchAllExercises(0, false)}
               disabled={loading}
               className="px-4 py-2 bg-accent text-accent-foreground rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              Load All (30 exercises)
+              Load All Exercises
             </button>
+            <span className="ml-2 text-sm text-muted-foreground">
+              (Free API returns 30 per page - use &quot;Load More&quot; to paginate)
+            </span>
           </div>
 
           <div className="mb-4">
@@ -171,21 +190,25 @@ export default function TestExercisesPage() {
           </div>
         )}
 
-        {loading && (
+        {loading && exercises.length === 0 && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <p className="mt-4 text-muted-foreground">Loading exercises...</p>
           </div>
         )}
 
-        {!loading && exercises.length > 0 && (
+        {exercises.length > 0 && (
           <div>
             <h2 className="text-xl font-bold text-foreground mb-4">
-              Results ({exercises.length} exercises)
+              Results ({exercises.length} exercises loaded)
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {exercises.map((exercise) => (
-                <div key={exercise.id} className="border border-border rounded-lg overflow-hidden bg-card hover:shadow-lg transition-shadow">
+                <button
+                  key={exercise.id}
+                  onClick={() => setSelectedExercise(exercise)}
+                  className="border border-border rounded-lg overflow-hidden bg-card hover:shadow-lg hover:border-primary transition-all text-left"
+                >
                   {exercise.gifUrl ? (
                     <img
                       src={exercise.gifUrl}
@@ -203,14 +226,26 @@ export default function TestExercisesPage() {
                   <div className="p-4">
                     <h3 className="font-semibold text-foreground capitalize mb-2">{exercise.name}</h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
-                      <p><span className="font-medium">Target:</span> {exercise.targetMuscle}</p>
-                      <p><span className="font-medium">Body Part:</span> {exercise.bodyPart}</p>
-                      <p><span className="font-medium">Equipment:</span> {exercise.equipment}</p>
+                      <p><span className="font-medium">Target:</span> {exercise.targetMuscle || 'N/A'}</p>
+                      <p><span className="font-medium">Body Part:</span> {exercise.bodyPart || 'N/A'}</p>
+                      <p><span className="font-medium">Equipment:</span> {exercise.equipment || 'N/A'}</p>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
+
+            {selectedFilter === 'all' && hasMore && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {loading ? 'Loading...' : 'Load More Exercises'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -220,6 +255,84 @@ export default function TestExercisesPage() {
           </div>
         )}
       </div>
+
+      {/* Exercise Detail Modal */}
+      {selectedExercise && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedExercise(null)}
+        >
+          <div 
+            className="bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-card border-b border-border p-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground capitalize">{selectedExercise.name}</h2>
+              <button 
+                onClick={() => setSelectedExercise(null)}
+                className="text-muted-foreground hover:text-foreground text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {selectedExercise.gifUrl && (
+                <img
+                  src={selectedExercise.gifUrl}
+                  alt={selectedExercise.name}
+                  className="w-full rounded-lg mb-6 bg-secondary"
+                />
+              )}
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-secondary p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Target Muscle</p>
+                  <p className="font-semibold text-foreground capitalize">{selectedExercise.targetMuscle || 'N/A'}</p>
+                </div>
+                <div className="bg-secondary p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Body Part</p>
+                  <p className="font-semibold text-foreground capitalize">{selectedExercise.bodyPart || 'N/A'}</p>
+                </div>
+                <div className="bg-secondary p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Equipment</p>
+                  <p className="font-semibold text-foreground capitalize">{selectedExercise.equipment || 'N/A'}</p>
+                </div>
+                {selectedExercise.secondaryMuscles && selectedExercise.secondaryMuscles.length > 0 && (
+                  <div className="bg-secondary p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Secondary Muscles</p>
+                    <p className="font-semibold text-foreground capitalize">
+                      {selectedExercise.secondaryMuscles.join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {selectedExercise.instructions && selectedExercise.instructions.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-foreground mb-3">Instructions</h3>
+                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                    {selectedExercise.instructions.map((instruction, index) => (
+                      <li key={index} className="leading-relaxed">{instruction}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {selectedExercise.videoUrl && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-foreground mb-3">Video</h3>
+                  <video 
+                    src={selectedExercise.videoUrl} 
+                    controls 
+                    className="w-full rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -31,7 +31,7 @@ export interface NormalizedExercise {
  * Normalize ExerciseDB response to our internal format
  */
 function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
-  const normalized = {
+  return {
     id: exercise.exerciseId || String(Math.random()),
     name: exercise.name,
     targetMuscle: exercise.target || '',
@@ -42,8 +42,6 @@ function normalizeExercise(exercise: ExerciseDBExercise): NormalizedExercise {
     secondaryMuscles: exercise.secondaryMuscles,
     instructions: exercise.instructions,
   }
-  console.log('[v0] Normalizing exercise:', exercise.name, 'target:', exercise.target, 'equipment:', exercise.equipment, 'bodyPart:', exercise.bodyPart)
-  return normalized
 }
 
 /**
@@ -113,7 +111,6 @@ export async function getBodyParts(): Promise<string[]> {
 export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
     const url = `${EXERCISE_DB_API}/api/v1/muscles/${encodeURIComponent(muscle)}/exercises?limit=${limit}`
-    console.log('[v0] Fetching exercises by muscle from:', url)
     
     const response = await fetch(url)
 
@@ -126,7 +123,6 @@ export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<
     const exercises = extractExercises(rawData)
     
     if (exercises.length === 0) {
-      console.log('[v0] No exercises found for muscle:', muscle)
       return filterFallbackByMuscle(muscle)
     }
     
@@ -144,7 +140,6 @@ export async function getExercisesByMuscle(muscle: string, limit = 20): Promise<
 export async function getExercisesByEquipment(equipment: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
     const url = `${EXERCISE_DB_API}/api/v1/equipments/${encodeURIComponent(equipment)}/exercises?limit=${limit}`
-    console.log('[v0] Fetching exercises by equipment from:', url)
     
     const response = await fetch(url)
 
@@ -157,7 +152,6 @@ export async function getExercisesByEquipment(equipment: string, limit = 20): Pr
     const exercises = extractExercises(rawData)
     
     if (exercises.length === 0) {
-      console.log('[v0] No exercises found for equipment:', equipment)
       return filterFallbackByEquipment(equipment)
     }
     
@@ -175,7 +169,6 @@ export async function getExercisesByEquipment(equipment: string, limit = 20): Pr
 export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Promise<NormalizedExercise[]> {
   try {
     const url = `${EXERCISE_DB_API}/api/v1/bodyparts/${encodeURIComponent(bodyPart)}/exercises?limit=${limit}`
-    console.log('[v0] Fetching exercises by body part from:', url)
     
     const response = await fetch(url)
 
@@ -188,7 +181,6 @@ export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Prom
     const exercises = extractExercises(rawData)
     
     if (exercises.length === 0) {
-      console.log('[v0] No exercises found for body part:', bodyPart)
       return filterFallbackByBodyPart(bodyPart)
     }
     
@@ -206,30 +198,20 @@ export async function getExercisesByBodyPart(bodyPart: string, limit = 20): Prom
 export async function getAllExercises(limit = 30, offset = 0): Promise<NormalizedExercise[]> {
   try {
     const url = `${EXERCISE_DB_API}/api/v1/exercises?limit=${limit}&offset=${offset}`
-    console.log('[v0] Fetching all exercises from:', url)
-    
     const response = await fetch(url)
 
     if (!response.ok) {
-      console.error('[v0] All exercises API error:', response.status)
       return FALLBACK_EXERCISES
     }
 
     const rawData = await response.json()
-    console.log('[v0] Raw response type:', typeof rawData, 'is array?', Array.isArray(rawData))
-    console.log('[v0] First response item sample:', JSON.stringify(rawData[0] || rawData).slice(0, 300))
-    
     const exercises = extractExercises(rawData)
     
     if (exercises.length === 0) {
-      console.log('[v0] No exercises extracted, returning fallback')
       return FALLBACK_EXERCISES
     }
     
-    console.log('[v0] Extracted', exercises.length, 'exercises')
-    const normalized = exercises.map(normalizeExercise)
-    console.log('[v0] Normalized exercise sample:', JSON.stringify(normalized[0]).slice(0, 300))
-    return normalized
+    return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching all exercises:', error)
     return FALLBACK_EXERCISES
@@ -241,24 +223,13 @@ export async function getAllExercises(limit = 30, offset = 0): Promise<Normalize
  */
 function extractExercises(data: unknown): ExerciseDBExercise[] {
   if (Array.isArray(data)) {
-    console.log('[v0] Response is direct array, first item:', JSON.stringify(data[0]).slice(0, 200))
     return data
   }
   if (data && typeof data === 'object') {
     const obj = data as Record<string, unknown>
-    if (Array.isArray(obj.data)) {
-      console.log('[v0] Response has .data property, first item:', JSON.stringify(obj.data[0]).slice(0, 200))
-      return obj.data
-    }
-    if (Array.isArray(obj.exercises)) {
-      console.log('[v0] Response has .exercises property, first item:', JSON.stringify(obj.exercises[0]).slice(0, 200))
-      return obj.exercises
-    }
-    if (Array.isArray(obj.results)) {
-      console.log('[v0] Response has .results property, first item:', JSON.stringify(obj.results[0]).slice(0, 200))
-      return obj.results
-    }
-    console.log('[v0] Response object keys:', Object.keys(obj))
+    if (Array.isArray(obj.data)) return obj.data
+    if (Array.isArray(obj.exercises)) return obj.exercises
+    if (Array.isArray(obj.results)) return obj.results
   }
   return []
 }
