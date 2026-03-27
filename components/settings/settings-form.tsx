@@ -1,21 +1,15 @@
 'use client'
 
-// Settings form for user preferences
 import { useState, useEffect } from 'react'
 import { dataStore } from '@/lib/storage/storage-provider'
-import type { UserSettings, FitnessGoal, IntensityLevel, WorkoutFrequency } from '@/lib/types'
+import type { UserSettings } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-const muscleGroups = [
-  'chest', 'back', 'shoulders', 'biceps', 'triceps', 
-  'forearms', 'quads', 'hamstrings', 'glutes', 'calves', 'core'
-]
-
 const equipmentOptions = [
-  'barbell', 'dumbbell', 'kettlebell', 'machine', 
-  'cable', 'resistance band', 'bodyweight', 'pull-up bar'
+  'barbell', 'dumbbell', 'kettlebell', 'machine',
+  'cable', 'resistance band', 'bodyweight', 'pull-up bar',
 ]
 
 const defaultSettings: UserSettings = {
@@ -44,18 +38,12 @@ export function SettingsForm() {
 
   useEffect(() => {
     const stored = dataStore.getUserSettings()
-    if (stored) {
-      setSettings(stored)
-    }
+    if (stored) setSettings(stored)
     setLoading(false)
   }, [])
 
   const handleChange = <K extends keyof UserSettings>(field: K, value: UserSettings[K]) => {
-    setSettings((prev) => ({
-      ...prev,
-      [field]: value,
-      updatedAt: Date.now(),
-    }))
+    setSettings((prev) => ({ ...prev, [field]: value, updatedAt: Date.now() }))
     setSaved(false)
   }
 
@@ -79,7 +67,6 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-6">
-      {/* Profile Info */}
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
@@ -106,7 +93,9 @@ export function SettingsForm() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Weight ({settings.useMetric ? 'kg' : 'lbs'})</label>
+              <label className="text-sm font-medium text-foreground">
+                Weight ({settings.useMetric ? 'kg' : 'lbs'})
+              </label>
               <Input
                 type="number"
                 value={settings.weight}
@@ -116,7 +105,9 @@ export function SettingsForm() {
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground">Height ({settings.useMetric ? 'cm' : 'inches'})</label>
+            <label className="text-sm font-medium text-foreground">
+              Height ({settings.useMetric ? 'cm' : 'inches'})
+            </label>
             <Input
               type="number"
               value={settings.height}
@@ -127,7 +118,6 @@ export function SettingsForm() {
         </CardContent>
       </Card>
 
-      {/* Fitness Preferences */}
       <Card>
         <CardHeader>
           <CardTitle>Fitness Preferences</CardTitle>
@@ -138,7 +128,7 @@ export function SettingsForm() {
             <label className="text-sm font-medium text-foreground">Primary Goal</label>
             <select
               value={settings.goal}
-              onChange={(e) => handleChange('goal', e.target.value as FitnessGoal)}
+              onChange={(e) => handleChange('goal', e.target.value as UserSettings['goal'])}
               className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
             >
               <option value="muscle-gain">Build Muscle</option>
@@ -152,7 +142,7 @@ export function SettingsForm() {
             <label className="text-sm font-medium text-foreground">Workouts Per Week</label>
             <select
               value={settings.frequency}
-              onChange={(e) => handleChange('frequency', parseInt(e.target.value) as WorkoutFrequency)}
+              onChange={(e) => handleChange('frequency', parseInt(e.target.value) as UserSettings['frequency'])}
               className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
             >
               <option value="3">3 days</option>
@@ -165,18 +155,17 @@ export function SettingsForm() {
             <label className="text-sm font-medium text-foreground">Intensity Level</label>
             <select
               value={settings.intensity}
-              onChange={(e) => handleChange('intensity', e.target.value as IntensityLevel)}
+              onChange={(e) => handleChange('intensity', e.target.value as UserSettings['intensity'])}
               className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
             >
-              <option value="low">Low (Light weights, high reps)</option>
-              <option value="moderate">Moderate (Balanced)</option>
-              <option value="high">High (Heavy weights, low reps)</option>
+              <option value="low">Low — light weights, high reps</option>
+              <option value="moderate">Moderate — balanced</option>
+              <option value="high">High — heavy weights, low reps</option>
             </select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Equipment */}
       <Card>
         <CardHeader>
           <CardTitle>Available Equipment</CardTitle>
@@ -202,7 +191,6 @@ export function SettingsForm() {
         </CardContent>
       </Card>
 
-      {/* Timer Settings */}
       <Card>
         <CardHeader>
           <CardTitle>Timer Settings</CardTitle>
@@ -210,7 +198,9 @@ export function SettingsForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground">Rest Duration Between Sets (seconds)</label>
+            <label className="text-sm font-medium text-foreground">
+              Rest Duration Between Sets (seconds)
+            </label>
             <Input
               type="number"
               value={settings.timerBreakDuration}
@@ -221,43 +211,39 @@ export function SettingsForm() {
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="sound"
               checked={settings.timerSoundEnabled}
               onChange={(e) => handleChange('timerSoundEnabled', e.target.checked)}
-              id="enableSound"
-              className="rounded"
             />
-            <label htmlFor="enableSound" className="text-sm font-medium text-foreground">
-              Enable Sound Notifications
+            <label htmlFor="sound" className="text-sm font-medium text-foreground">
+              Enable sound notifications
             </label>
           </div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="vibration"
               checked={settings.timerVibrationEnabled}
               onChange={(e) => handleChange('timerVibrationEnabled', e.target.checked)}
-              id="enableVibration"
-              className="rounded"
             />
-            <label htmlFor="enableVibration" className="text-sm font-medium text-foreground">
-              Enable Vibration Notifications
+            <label htmlFor="vibration" className="text-sm font-medium text-foreground">
+              Enable vibration notifications
             </label>
           </div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="metric"
               checked={settings.useMetric}
               onChange={(e) => handleChange('useMetric', e.target.checked)}
-              id="useMetric"
-              className="rounded"
             />
-            <label htmlFor="useMetric" className="text-sm font-medium text-foreground">
-              Use Metric Units (kg, cm)
+            <label htmlFor="metric" className="text-sm font-medium text-foreground">
+              Use metric units (kg, cm)
             </label>
           </div>
         </CardContent>
       </Card>
 
-      {/* Limitations */}
       <Card>
         <CardHeader>
           <CardTitle>Limitations & Injuries</CardTitle>
@@ -266,19 +252,27 @@ export function SettingsForm() {
         <CardContent>
           <textarea
             value={settings.injuriesOrLimitations?.join(', ') || ''}
-            onChange={(e) => handleChange('injuriesOrLimitations', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+            onChange={(e) =>
+              handleChange(
+                'injuriesOrLimitations',
+                e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+              )
+            }
             placeholder="e.g., Lower back pain, Knee injury"
-            className="w-full p-3 border border-border rounded-md bg-background text-foreground min-h-[100px]"
+            className="w-full p-3 border border-border rounded-md bg-background text-foreground min-h-[80px] resize-none"
           />
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center pb-4">
         <Button onClick={handleSave} size="lg" className="flex-1">
           Save Settings
         </Button>
-        {saved && <span className="text-sm text-green-600 font-medium">Saved!</span>}
+        {saved && (
+          <span className="text-sm font-medium" style={{ color: 'oklch(0.68 0.18 215)' }}>
+            Saved!
+          </span>
+        )}
       </div>
     </div>
   )
