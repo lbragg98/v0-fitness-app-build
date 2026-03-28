@@ -2,13 +2,15 @@ export interface Exercise {
   id: string
   name: string
   targetMuscle: string
-  equipment: string[]
+  equipment: string | string[]
   bodyPart: string
-  difficulty: 'beginner' | 'intermediate' | 'expert'
-  instructions: string[]
+  difficulty?: 'beginner' | 'intermediate' | 'expert'
+  instructions?: string[]
   image?: string
   gifUrl?: string
-  exerciseType: 'compound' | 'isolation' | 'accessory'
+  videoUrl?: string
+  exerciseType?: 'compound' | 'isolation' | 'accessory'
+  secondaryMuscles?: string[]
 
   sets?: number
   reps?: number
@@ -16,6 +18,18 @@ export interface Exercise {
   repsMax?: number
   restSeconds?: number
   notes?: string
+}
+
+export interface NormalizedExercise {
+  id: string
+  name: string
+  targetMuscle: string
+  equipment: string
+  bodyPart: string
+  gifUrl?: string
+  videoUrl?: string
+  secondaryMuscles?: string[]
+  instructions?: string[]
 }
 
 export interface ExerciseSet {

@@ -8,7 +8,7 @@ export type {
   SplitPreference,
 } from './user'
 
-export type { Exercise, ExerciseSet, TimedExercise } from './exercise'
+export type { Exercise, ExerciseSet, TimedExercise, NormalizedExercise } from './exercise'
 
 export type {
   Workout,
