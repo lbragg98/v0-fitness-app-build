@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { dataStore } from '@/lib/storage/storage-provider'
-import type { Workout, Exercise, ExerciseSet } from '@/lib/types'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ExerciseDetailsModal } from '@/components/session/exercise-details-modal'
 import { ExerciseView } from '@/components/session/exercise-view'
 import { SetTracker } from '@/components/session/set-tracker'
-import { ExerciseDetailsModal } from '@/components/session/exercise-details-modal'
+import { dataStore } from '@/lib/storage/storage-provider'
+import type { Exercise, ExerciseSet, Workout } from '@/lib/types'
 
 interface SessionExercise {
   exercise: Exercise
@@ -27,9 +27,9 @@ export default function SessionPage() {
   const [showExerciseDetails, setShowExerciseDetails] = useState(false)
 
   useEffect(() => {
-    loadWorkoutDay()
     const settings = dataStore.getUserSettings()
     setUserSettings(settings)
+    loadWorkoutDay()
   }, [dayId])
 
   const loadWorkoutDay = () => {
@@ -45,7 +45,8 @@ export default function SessionPage() {
 
     if (dayId) {
       const day = active.days.find((d) => d.id === dayId)
-      if (day && day.exercises) {
+
+      if (day?.exercises?.length) {
         const sessionExercises: SessionExercise[] = day.exercises.map((ex) => ({
           exercise: ex,
           sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
@@ -57,6 +58,7 @@ export default function SessionPage() {
             completed: false,
           })),
         }))
+
         setExercises(sessionExercises)
       }
     }
@@ -137,8 +139,8 @@ export default function SessionPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="h-96 bg-secondary rounded-lg animate-pulse" />
+        <div className="mx-auto max-w-2xl px-4 py-8">
+          <div className="h-96 animate-pulse rounded-lg bg-secondary" />
         </div>
       </main>
     )
@@ -147,12 +149,12 @@ export default function SessionPage() {
   if (exercises.length === 0) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="mx-auto max-w-2xl px-4 py-8">
           <div className="rounded-lg border border-border bg-card p-8 text-center">
-            <p className="text-muted-foreground mb-4">No workout data found</p>
+            <p className="mb-4 text-muted-foreground">No workout data found</p>
             <button
               onClick={() => router.push('/activity')}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90"
+              className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:opacity-90"
             >
               Back to Activity
             </button>
@@ -168,19 +170,18 @@ export default function SessionPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {workout?.name}
-            </h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-foreground">{workout?.name}</h1>
+            <p className="mt-1 text-muted-foreground">
               Exercise {currentExerciseIdx + 1} of {exercises.length}
             </p>
           </div>
+
           <button
             onClick={() => router.push('/activity')}
-            className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-secondary transition-colors"
+            className="rounded-lg border border-border px-4 py-2 text-foreground transition-colors hover:bg-secondary"
           >
             Exit
           </button>
@@ -189,7 +190,7 @@ export default function SessionPage() {
         <button
           type="button"
           onClick={() => setShowExerciseDetails(true)}
-          className="w-full bg-card border border-border rounded-lg p-6 mb-2 text-left"
+          className="mb-2 w-full rounded-lg border border-border bg-card p-6 text-left"
         >
           <ExerciseView
             exercise={current.exercise}
@@ -198,11 +199,11 @@ export default function SessionPage() {
           />
         </button>
 
-        <p className="text-xs text-muted-foreground text-center mb-6">
+        <p className="mb-6 text-center text-xs text-muted-foreground">
           Tap the exercise card to view full instructions
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 mb-6">
+        <div className="mb-6 rounded-lg border border-border bg-card p-6">
           <SetTracker
             sets={current.sets}
             targetReps={current.exercise.reps || current.exercise.repsMin || 10}
@@ -213,11 +214,9 @@ export default function SessionPage() {
 
         <div className="flex gap-3">
           <button
-            onClick={() =>
-              setCurrentExerciseIdx(Math.max(0, currentExerciseIdx - 1))
-            }
+            onClick={() => setCurrentExerciseIdx(Math.max(0, currentExerciseIdx - 1))}
             disabled={currentExerciseIdx === 0}
-            className="flex-1 px-4 py-3 border border-border text-foreground rounded-lg hover:bg-secondary disabled:opacity-50 font-semibold transition-colors"
+            className="flex-1 rounded-lg border border-border px-4 py-3 font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
           >
             Previous
           </button>
@@ -225,12 +224,10 @@ export default function SessionPage() {
           {currentExerciseIdx < exercises.length - 1 ? (
             <button
               onClick={() =>
-                setCurrentExerciseIdx(
-                  Math.min(exercises.length - 1, currentExerciseIdx + 1)
-                )
+                setCurrentExerciseIdx(Math.min(exercises.length - 1, currentExerciseIdx + 1))
               }
               disabled={!current.sets.every((s) => s.completed)}
-              className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold transition-colors"
+              className="flex-1 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
             >
               Next Exercise
             </button>
@@ -238,7 +235,7 @@ export default function SessionPage() {
             <button
               onClick={handleFinishWorkout}
               disabled={!allSetsCompleted}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold transition-colors"
+              className="flex-1 rounded-lg bg-green-600 px-4 py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
             >
               Finish Workout
             </button>
