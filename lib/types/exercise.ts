@@ -1,14 +1,21 @@
 export interface Exercise {
   id: string
   name: string
-  targetMuscle: string // e.g., 'chest', 'back', 'legs'
-  equipment: string[] // e.g., ['barbell', 'dumbbell']
-  bodyPart: string // e.g., 'chest', 'back', 'legs'
+  targetMuscle: string
+  equipment: string[]
+  bodyPart: string
   difficulty: 'beginner' | 'intermediate' | 'expert'
   instructions: string[]
-  image?: string // URL or base64
+  image?: string
   gifUrl?: string
   exerciseType: 'compound' | 'isolation' | 'accessory'
+
+  sets?: number
+  reps?: number
+  repsMin?: number
+  repsMax?: number
+  restSeconds?: number
+  notes?: string
 }
 
 export interface ExerciseSet {
@@ -23,7 +30,7 @@ export interface ExerciseSet {
 }
 
 export interface TimedExercise extends ExerciseSet {
-  targetDuration: number // in seconds
-  actualDuration: number // in seconds
+  targetDuration: number
+  actualDuration: number
   isUntilFailure: boolean
 }
