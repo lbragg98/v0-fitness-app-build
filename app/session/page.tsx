@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ExerciseDetailsModal } from '@/components/session/exercise-details-modal'
 import { ExerciseView } from '@/components/session/exercise-view'
@@ -13,7 +13,7 @@ interface SessionExercise {
   sets: ExerciseSet[]
 }
 
-export default function SessionPage() {
+function SessionPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dayId = searchParams.get('dayId')
@@ -249,5 +249,21 @@ export default function SessionPage() {
         onClose={() => setShowExerciseDetails(false)}
       />
     </main>
+  )
+}
+
+export default function SessionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-background">
+          <div className="mx-auto max-w-2xl px-4 py-8">
+            <div className="h-96 animate-pulse rounded-lg bg-secondary" />
+          </div>
+        </main>
+      }
+    >
+      <SessionPageContent />
+    </Suspense>
   )
 }
