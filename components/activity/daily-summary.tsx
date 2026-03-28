@@ -9,68 +9,91 @@ interface DailySummaryProps {
 
 export function DailySummary({ workout }: DailySummaryProps) {
   const today = new Date()
-  const dayOfWeek = today.getDay()
-  
-  const todayWorkout = workout?.days.find((d) => d.dayNumber === dayOfWeek)
-  const isRestDay = !todayWorkout || todayWorkout.isRestDay
+  const weekday = today.getDay()
+
+  const todayWorkout =
+    workout?.days.find((day) => day.calendarDay === weekday) ||
+    workout?.days.find((day) => day.dayNumber === weekday) ||
+    null
 
   if (!workout) {
     return (
-      <div className="rounded-lg border border-border bg-card p-6 text-center">
-        <p className="text-muted-foreground">No workout plan yet. Generate one from your profile.</p>
-      </div>
+      <section className="rounded-2xl border border-border bg-card p-6">
+        <p className="text-muted-foreground">
+          No workout plan yet. Generate one from your profile.
+        </p>
+      </section>
     )
   }
 
-  if (isRestDay) {
+  if (!todayWorkout) {
     return (
-      <div className="rounded-lg border border-border bg-secondary/20 p-6 text-center">
-        <h3 className="text-xl font-bold text-foreground mb-2">Rest Day</h3>
-        <p className="text-muted-foreground">Take it easy today. Recovery is important!</p>
-      </div>
+      <section className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="text-xl font-semibold text-foreground">Rest Day</h2>
+        <p className="mt-2 text-muted-foreground">
+          Take it easy today. Recovery is part of the plan.
+        </p>
+      </section>
     )
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-      <div>
-        <h3 className="text-2xl font-bold text-foreground">{todayWorkout?.name}</h3>
-        <p className="text-muted-foreground mt-1">{todayWorkout?.exercises.length || 0} exercises</p>
-      </div>
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <h2 className="text-xl font-semibold text-foreground">Today</h2>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-xs text-muted-foreground uppercase font-semibold">Duration</p>
-          <p className="text-lg font-bold text-foreground">{todayWorkout?.estimatedDuration || 45} min</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground uppercase font-semibold">Muscle Groups</p>
-          <p className="text-lg font-bold text-foreground">{todayWorkout?.muscleGroups.length || 0}</p>
-        </div>
-      </div>
+      <div className="mt-4 rounded-2xl bg-background p-4">
+        <h3 className="text-lg font-semibold text-foreground">
+          {todayWorkout.name}
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {todayWorkout.exercises.length} exercises
+        </p>
 
-      {todayWorkout?.muscleGroups && todayWorkout.muscleGroups.length > 0 && (
-        <div>
-          <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Focus Areas</p>
-          <div className="flex flex-wrap gap-2">
-            {todayWorkout.muscleGroups.map((muscle) => (
-              <span
-                key={muscle}
-                className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-medium"
-              >
-                {muscle}
-              </span>
-            ))}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-secondary/40 p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">
+              Duration
+            </p>
+            <p className="mt-1 text-lg font-bold text-foreground">
+              {todayWorkout.estimatedDuration || 45} min
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-secondary/40 p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">
+              Focus Areas
+            </p>
+            <p className="mt-1 text-lg font-bold text-foreground">
+              {todayWorkout.muscleGroups.length}
+            </p>
           </div>
         </div>
-      )}
 
-      <Link
-        href={`/session?dayId=${todayWorkout?.id || ''}`}
-        className="block w-full mt-4 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity text-center"
-      >
-        Start Your Day
-      </Link>
-    </div>
+        {todayWorkout.muscleGroups.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+              Muscle Groups
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {todayWorkout.muscleGroups.map((muscle) => (
+                <span
+                  key={muscle}
+                  className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
+                >
+                  {muscle}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Link
+          href={`/session?dayId=${todayWorkout.id}`}
+          className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Start Your Day
+        </Link>
+      </div>
+    </section>
   )
 }

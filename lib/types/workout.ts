@@ -1,9 +1,12 @@
 import type { Exercise, ExerciseSet } from './exercise'
+import type { SplitPreference } from './user'
 
 export interface WorkoutDay {
   id: string
   dayNumber: number
+  calendarDay: number
   name: string
+  splitKey: string
   muscleGroups: string[]
   exercises: Exercise[]
   isRestDay?: boolean
@@ -15,6 +18,7 @@ export interface Workout {
   name: string
   description?: string
   frequency: number
+  splitPreference?: SplitPreference
   days: WorkoutDay[]
   createdAt: number
   updatedAt: number

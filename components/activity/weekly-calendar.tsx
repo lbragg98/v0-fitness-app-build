@@ -7,90 +7,109 @@ interface WeeklyCalendarProps {
   workout: Workout | null
 }
 
+const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = useMemo(() => {
+    const current = new Date()
+    current.setHours(0, 0, 0, 0)
+    return current
+  }, [])
 
   const weekDays = useMemo(() => {
-    const days = []
     const startOfWeek = new Date(today)
     startOfWeek.setDate(today.getDate() - today.getDay())
 
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(startOfWeek)
-      date.setDate(startOfWeek.getDate() + i)
-      days.push(date)
-    }
-    return days
+      date.setDate(startOfWeek.getDate() + index)
+      return date
+    })
   }, [today])
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
 
-  const getWorkoutForDay = (dayIndex: number) => {
+  const getWorkoutForWeekday = (weekday: number) => {
     if (!workout) return null
-    // Find workout day that matches the day of week (0-6, Sun-Sat)
-    return workout.days.find((d) => d.dayNumber === dayIndex) || null
+    return (
+      workout.days.find((day) => day.calendarDay === weekday) ||
+      workout.days.find((day) => day.dayNumber === weekday) ||
+      null
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">This Week</h3>
-      
-      <div className="grid grid-cols-7 gap-2">
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <h2 className="text-xl font-semibold text-foreground">This Week</h2>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {weekDays.map((date, index) => {
-          const workoutDay = getWorkoutForDay(date.getDay())
+          const weekday = date.getDay()
+          const scheduledDay = getWorkoutForWeekday(weekday)
           const isToday = date.getTime() === today.getTime()
-          const isRestDay = !workoutDay || workoutDay.isRestDay
+          const bullets = scheduledDay?.muscleGroups?.slice(0, 3) || []
 
           return (
             <div
-              key={index}
-              className={`
-                flex flex-col items-center p-3 rounded-lg border-2 transition-colors
-                ${isToday
+              key={date.toISOString()}
+              className={[
+                'rounded-2xl border p-4',
+                isToday
                   ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/50'
-                }
-                ${isRestDay ? 'bg-muted/30' : 'bg-card'}
-              `}
+                  : 'border-border bg-background',
+              ].join(' ')}
             >
-              <div className="text-xs font-semibold text-muted-foreground uppercase">
-                {dayLabels[index]}
-              </div>
-              <div className="text-sm font-bold text-foreground mt-1">
-                {monthFormatter.format(date).split(' ')[1]}
-              </div>
-
-              {isToday && (
-                <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-              )}
-
-              {!isRestDay && workoutDay && (
-                <div className="mt-2 space-y-1 w-full">
-                  <div className="text-xs text-center text-card-foreground font-medium truncate">
-                    {workoutDay.name}
-                  </div>
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    {workoutDay.muscleGroups.slice(0, 2).map((muscle) => (
-                      <span
-                        key={muscle}
-                        className="text-xs px-2 py-0.5 bg-secondary text-secondary-foreground rounded"
-                      >
-                        {muscle.slice(0, 3)}
-                      </span>
-                    ))}
-                  </div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {dayLabels[index]}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatter.format(date)}
+                  </p>
                 </div>
-              )}
 
-              {isRestDay && (
-                <div className="text-xs text-muted-foreground mt-2 font-medium">Rest</div>
-              )}
+                {isToday && (
+                  <span className="rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+                    Today
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4">
+                {scheduledDay ? (
+                  <>
+                    <p className="text-sm font-semibold text-foreground">
+                      {scheduledDay.name}
+                    </p>
+
+                    <div className="mt-2 space-y-1">
+                      {bullets.map((muscle) => (
+                        <p
+                          key={`${date.toISOString()}-${muscle}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          • {muscle}
+                        </p>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-foreground">Rest</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Recovery day
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )
         })}
       </div>
-    </div>
+    </section>
   )
 }

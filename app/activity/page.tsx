@@ -14,7 +14,7 @@ export default function ActivityPage() {
   useEffect(() => {
     try {
       const workouts = dataStore.getWorkouts()
-      const activeWorkout = workouts.find((w) => w.isActive)
+      const activeWorkout = workouts.find((item) => item.isActive)
       setWorkout(activeWorkout || null)
     } catch (error) {
       console.error('[v0] Error loading workout:', error)
@@ -25,37 +25,38 @@ export default function ActivityPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Activity</h1>
-          <p className="text-muted-foreground">View your workout schedule and track your progress</p>
+          <h1 className="text-3xl font-bold text-foreground">Activity</h1>
+          <p className="mt-2 text-muted-foreground">
+            View your weekly schedule and start today’s workout.
+          </p>
         </div>
 
         {isLoading ? (
-          <div className="space-y-4">
-            <div className="h-32 bg-secondary rounded-lg animate-pulse" />
-            <div className="h-64 bg-secondary rounded-lg animate-pulse" />
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="h-96 animate-pulse rounded-2xl bg-secondary" />
+            <div className="h-96 animate-pulse rounded-2xl bg-secondary" />
+          </div>
+        ) : !workout ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <h2 className="text-xl font-semibold text-foreground">
+              No Active Workout Plan
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Generate a personalized workout plan from your profile to get started.
+            </p>
+            <Link
+              href="/profile"
+              className="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Go to Profile
+            </Link>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <WeeklyCalendar workout={workout} />
             <DailySummary workout={workout} />
-            
-            {!workout && (
-              <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <h3 className="text-xl font-bold text-foreground mb-2">No Active Workout Plan</h3>
-                <p className="text-muted-foreground mb-4">
-                  Generate a personalized workout plan from your profile to get started.
-                </p>
-                <Link
-                  href="/profile"
-                  className="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Go to Profile
-                </Link>
-              </div>
-            )}
-
-            {workout && <WeeklyCalendar workout={workout} />}
           </div>
         )}
       </div>
