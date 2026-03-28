@@ -7,6 +7,14 @@ interface DailySummaryProps {
   workout: Workout | null
 }
 
+function formatLabel(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function DailySummary({ workout }: DailySummaryProps) {
   const today = new Date()
   const weekday = today.getDay()
@@ -43,7 +51,7 @@ export function DailySummary({ workout }: DailySummaryProps) {
 
       <div className="mt-4 rounded-2xl bg-background p-4">
         <h3 className="text-lg font-semibold text-foreground">
-          {todayWorkout.name}
+          {formatLabel(todayWorkout.name)}
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
           {todayWorkout.exercises.length} exercises
@@ -80,7 +88,7 @@ export function DailySummary({ workout }: DailySummaryProps) {
                   key={muscle}
                   className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
                 >
-                  {muscle}
+                  {formatLabel(muscle)}
                 </span>
               ))}
             </div>
