@@ -6,6 +6,7 @@ import { dataStore } from '@/lib/storage/storage-provider'
 import type { Workout, Exercise, ExerciseSet } from '@/lib/types'
 import { ExerciseView } from '@/components/session/exercise-view'
 import { SetTracker } from '@/components/session/set-tracker'
+import { ExerciseDetailsModal } from '@/components/session/exercise-details-modal'
 
 interface SessionExercise {
   exercise: Exercise
@@ -23,6 +24,7 @@ export default function SessionPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [sessionStartTime] = useState(Date.now())
   const [userSettings, setUserSettings] = useState<any>(null)
+  const [showExerciseDetails, setShowExerciseDetails] = useState(false)
 
   useEffect(() => {
     loadWorkoutDay()
@@ -184,13 +186,21 @@ export default function SessionPage() {
           </button>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 mb-6">
+        <button
+          type="button"
+          onClick={() => setShowExerciseDetails(true)}
+          className="w-full bg-card border border-border rounded-lg p-6 mb-2 text-left"
+        >
           <ExerciseView
             exercise={current.exercise}
             currentSet={currentSetNumber}
             totalSets={current.sets.length}
           />
-        </div>
+        </button>
+
+        <p className="text-xs text-muted-foreground text-center mb-6">
+          Tap the exercise card to view full instructions
+        </p>
 
         <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <SetTracker
@@ -235,6 +245,12 @@ export default function SessionPage() {
           )}
         </div>
       </div>
+
+      <ExerciseDetailsModal
+        exercise={current.exercise}
+        isOpen={showExerciseDetails}
+        onClose={() => setShowExerciseDetails(false)}
+      />
     </main>
   )
 }
