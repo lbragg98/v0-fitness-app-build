@@ -48,7 +48,7 @@ export default function SessionPage() {
           exercise: ex,
           sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
             setNumber: i + 1,
-            targetReps: ex.reps || 10,
+            targetReps: ex.reps || ex.repsMin || 10,
             actualReps: 0,
             weight: 0,
             weightUnit: 'lbs' as const,
@@ -58,16 +58,32 @@ export default function SessionPage() {
         setExercises(sessionExercises)
       }
     }
+
     setIsLoading(false)
   }
 
   const handleCompleteSet = (setIndex: number, actualReps: number, weight: number) => {
-    const updated = [...exercises]
-    updated[currentExerciseIdx].sets[setIndex].actualReps = actualReps
-    updated[currentExerciseIdx].sets[setIndex].weight = weight
-    updated[currentExerciseIdx].sets[setIndex].completed = true
-    updated[currentExerciseIdx].sets[setIndex].completedAt = Date.now()
-    setExercises(updated)
+    setExercises((previous) => {
+      const updated = [...previous]
+      const currentExercise = {
+        ...updated[currentExerciseIdx],
+        sets: updated[currentExerciseIdx].sets.map((set) => ({ ...set })),
+      }
+
+      currentExercise.sets[setIndex].actualReps = actualReps
+      currentExercise.sets[setIndex].weight = weight
+      currentExercise.sets[setIndex].completed = true
+      currentExercise.sets[setIndex].completedAt = Date.now()
+
+      for (let i = setIndex + 1; i < currentExercise.sets.length; i++) {
+        if (!currentExercise.sets[i].completed && currentExercise.sets[i].weight === 0) {
+          currentExercise.sets[i].weight = weight
+        }
+      }
+
+      updated[currentExerciseIdx] = currentExercise
+      return updated
+    })
   }
 
   const allSetsCompleted =
@@ -108,11 +124,11 @@ export default function SessionPage() {
         exercisesCompleted: exercises.length,
         totalExercises: exercises.length,
       }
-      dataStore.saveWorkoutCompletion(completion)
 
+      dataStore.saveWorkoutCompletion(completion)
       router.push('/activity')
     } catch (error) {
-      // Silent fail
+      console.error('Failed to save workout session:', error)
     }
   }
 
@@ -145,6 +161,8 @@ export default function SessionPage() {
   }
 
   const current = exercises[currentExerciseIdx]
+  const completedSetCount = current.sets.filter((s) => s.completed).length
+  const currentSetNumber = Math.min(completedSetCount + 1, current.sets.length)
 
   return (
     <main className="min-h-screen bg-background">
@@ -169,7 +187,7 @@ export default function SessionPage() {
         <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <ExerciseView
             exercise={current.exercise}
-            currentSet={current.sets.filter((s) => s.completed).length + 1}
+            currentSet={currentSetNumber}
             totalSets={current.sets.length}
           />
         </div>
@@ -177,7 +195,7 @@ export default function SessionPage() {
         <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <SetTracker
             sets={current.sets}
-            targetReps={current.exercise.reps || 10}
+            targetReps={current.exercise.reps || current.exercise.repsMin || 10}
             restDuration={userSettings?.timerBreakDuration || 90}
             onCompleteSet={handleCompleteSet}
           />

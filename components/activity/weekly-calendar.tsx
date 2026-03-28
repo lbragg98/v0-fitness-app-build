@@ -9,6 +9,14 @@ interface WeeklyCalendarProps {
 
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+function formatLabel(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
   const today = useMemo(() => {
     const current = new Date()
@@ -34,6 +42,7 @@ export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
 
   const getWorkoutForWeekday = (weekday: number) => {
     if (!workout) return null
+
     return (
       workout.days.find((day) => day.calendarDay === weekday) ||
       workout.days.find((day) => day.dayNumber === weekday) ||
@@ -83,7 +92,7 @@ export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
                 {scheduledDay ? (
                   <>
                     <p className="text-sm font-semibold text-foreground">
-                      {scheduledDay.name}
+                      {formatLabel(scheduledDay.name)}
                     </p>
 
                     <div className="mt-2 space-y-1">
@@ -92,7 +101,7 @@ export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
                           key={`${date.toISOString()}-${muscle}`}
                           className="text-xs text-muted-foreground"
                         >
-                          • {muscle}
+                          • {formatLabel(muscle)}
                         </p>
                       ))}
                     </div>
@@ -101,7 +110,7 @@ export function WeeklyCalendar({ workout }: WeeklyCalendarProps) {
                   <>
                     <p className="text-sm font-semibold text-foreground">Rest</p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Recovery day
+                      Recovery Day
                     </p>
                   </>
                 )}
