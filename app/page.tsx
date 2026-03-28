@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'FitFlow - Home',
+  title: 'AWAAAAA',
   description: 'Your personal fitness companion',
 }
 
@@ -10,7 +10,7 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">FitFlow</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-4">AWA</h1>
           <p className="text-xl text-muted-foreground">Your Personal Fitness Companion</p>
         </div>
 
