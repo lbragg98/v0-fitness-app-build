@@ -18,7 +18,8 @@ export function SetTracker({
   onCompleteSet,
 }: SetTrackerProps) {
   const firstIncompleteSetIndex = sets.findIndex((set) => !set.completed)
-  const safeInitialIndex = firstIncompleteSetIndex === -1 ? sets.length - 1 : firstIncompleteSetIndex
+  const safeInitialIndex =
+    firstIncompleteSetIndex === -1 ? sets.length - 1 : firstIncompleteSetIndex
 
   const [expandedSet, setExpandedSet] = useState<number | null>(safeInitialIndex)
   const [repsInput, setRepsInput] = useState('')
@@ -54,7 +55,7 @@ export function SetTracker({
     }
   }
 
-  const handleBreakComplete = () => {
+  const advanceToNextSet = () => {
     setShowBreakTimer(false)
 
     if (currentSetAfterBreak !== null) {
@@ -150,7 +151,8 @@ export function SetTracker({
       {showBreakTimer && (
         <BreakTimer
           duration={restDuration}
-          onComplete={handleBreakComplete}
+          onComplete={advanceToNextSet}
+          onSkip={advanceToNextSet}
         />
       )}
     </>
