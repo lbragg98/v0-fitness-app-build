@@ -8,28 +8,38 @@ interface ExerciseViewProps {
   totalSets: number
 }
 
+function formatLabel(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function ExerciseView({ exercise, currentSet, totalSets }: ExerciseViewProps) {
-  // Handle equipment as string or array
-  const equipmentDisplay = Array.isArray(exercise.equipment) 
-    ? exercise.equipment.join(', ') 
-    : exercise.equipment || 'Bodyweight'
+  const equipmentDisplay = Array.isArray(exercise.equipment)
+    ? exercise.equipment.map(formatLabel).join(', ')
+    : exercise.equipment
+      ? formatLabel(exercise.equipment)
+      : 'Bodyweight'
 
   return (
     <div className="space-y-4">
-      {/* Exercise Name - Large and prominent */}
-      <div className="text-center py-4">
-        <h2 className="text-2xl font-bold text-foreground mb-1">{exercise.name || 'Unknown Exercise'}</h2>
-        <p className="text-primary font-medium">
+      <div className="py-4 text-center">
+        <h2 className="mb-1 text-2xl font-bold text-foreground">
+          {exercise.name || 'Unknown Exercise'}
+        </h2>
+        <p className="font-medium text-primary">
           Set {currentSet} of {totalSets}
         </p>
       </div>
 
       {exercise.gifUrl && (
-        <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center h-48">
+        <div className="flex h-48 items-center justify-center overflow-hidden rounded-lg bg-muted">
           <img
             src={exercise.gifUrl}
             alt={exercise.name}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none'
             }}
@@ -38,21 +48,22 @@ export function ExerciseView({ exercise, currentSet, totalSets }: ExerciseViewPr
       )}
 
       <div className="grid grid-cols-2 gap-4 pt-2">
-        <div className="bg-secondary/30 rounded-lg p-3">
-          <p className="text-xs text-muted-foreground uppercase font-semibold">Target</p>
-          <p className="text-lg font-bold text-foreground capitalize">{exercise.targetMuscle || 'General'}</p>
+        <div className="rounded-lg bg-secondary/30 p-3">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Target</p>
+          <p className="text-lg font-bold capitalize text-foreground">
+            {formatLabel(exercise.targetMuscle || 'General')}
+          </p>
         </div>
-        <div className="bg-secondary/30 rounded-lg p-3">
-          <p className="text-xs text-muted-foreground uppercase font-semibold">Equipment</p>
-          <p className="text-lg font-bold text-foreground capitalize">{equipmentDisplay}</p>
+        <div className="rounded-lg bg-secondary/30 p-3">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Equipment</p>
+          <p className="text-lg font-bold text-foreground">{equipmentDisplay}</p>
         </div>
       </div>
 
-      {/* Rep target info */}
-      <div className="bg-accent/20 rounded-lg p-3 text-center">
+      <div className="rounded-lg bg-accent/20 p-3 text-center">
         <p className="text-sm text-muted-foreground">Target</p>
         <p className="text-xl font-bold text-foreground">
-          {exercise.repsMin && exercise.repsMax 
+          {exercise.repsMin && exercise.repsMax
             ? `${exercise.repsMin}-${exercise.repsMax} reps`
             : `${exercise.reps || 10} reps`}
         </p>
@@ -60,8 +71,10 @@ export function ExerciseView({ exercise, currentSet, totalSets }: ExerciseViewPr
 
       {exercise.instructions && exercise.instructions.length > 0 && (
         <div className="pt-2">
-          <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Instructions</p>
-          <ol className="space-y-1 text-sm text-muted-foreground list-decimal list-inside">
+          <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+            Instructions
+          </p>
+          <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
             {exercise.instructions.slice(0, 3).map((instruction, idx) => (
               <li key={idx}>{instruction}</li>
             ))}
