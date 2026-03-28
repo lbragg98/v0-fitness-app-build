@@ -36,7 +36,7 @@ const FALLBACK_EXERCISES: NormalizedExercise[] = [
 
 // RapidAPI AscendAPI configuration
 const API_HOST = 'edb-with-videos-and-images-by-ascendapi.p.rapidapi.com'
-const API_KEY = process.env.EXERCISEDB_API_KEY || ''
+const API_KEY = process.env.RAPIDAPI_KEY || ''
 
 interface ExerciseDBExercise {
   name: string

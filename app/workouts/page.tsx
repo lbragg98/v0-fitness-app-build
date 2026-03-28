@@ -66,12 +66,20 @@ export default function WorkoutsPage() {
             <h1 className="text-4xl font-bold text-foreground mb-2">Workouts</h1>
             <p className="text-muted-foreground">Manage and activate your workout plans</p>
           </div>
-          <Link
-            href="/profile"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
-          >
-            Generate New
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/workouts/search"
+              className="px-4 py-2 bg-secondary text-foreground rounded-lg font-semibold hover:bg-secondary/80 transition-colors border border-border"
+            >
+              Search Exercises
+            </Link>
+            <Link
+              href="/profile"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+            >
+              Generate New
+            </Link>
+          </div>
         </div>
 
         {isLoading ? (
