@@ -49,7 +49,7 @@ interface ExerciseDBExercise {
   imageUrl?: string
   videoUrl?: string
   secondaryMuscles?: string[]
-  instructions?: string
+  instructions?: string | string[]
   exerciseId?: string
 }
 
@@ -59,7 +59,7 @@ interface ExerciseDBExercise {
  */
 async function fetchFromAPI(path: string): Promise<unknown> {
   const url = `https://${API_HOST}${path}`
-  
+
   const response = await fetch(url, {
     headers: {
       'x-rapidapi-key': API_KEY,
@@ -81,7 +81,7 @@ async function fetchFromAPI(path: string): Promise<unknown> {
  */
 function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
   return {
-    id: ex.name + (ex.muscle || ''),
+    id: ex.exerciseId || ex.name + (ex.muscle || ex.target || ''),
     name: ex.name,
     targetMuscle: ex.muscle || ex.target || '',
     equipment: ex.equipment || '',
@@ -89,7 +89,11 @@ function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
     gifUrl: ex.imageUrl || ex.gifUrl || '',
     videoUrl: ex.videoUrl,
     secondaryMuscles: ex.secondaryMuscles,
-    instructions: ex.instructions ? [ex.instructions] : undefined,
+    instructions: Array.isArray(ex.instructions)
+      ? ex.instructions
+      : typeof ex.instructions === 'string' && ex.instructions.trim()
+        ? [ex.instructions]
+        : [],
   }
 }
 
@@ -99,21 +103,21 @@ function normalizeExercise(ex: ExerciseDBExercise): NormalizedExercise {
 export async function searchExercises(query: string): Promise<NormalizedExercise[]> {
   try {
     const data = await fetchFromAPI(`/api/v1/exercises/search?search=${encodeURIComponent(query)}`)
-    
+
     let exercises: ExerciseDBExercise[] = []
     if (Array.isArray(data)) {
       exercises = data
     } else if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
       if (Array.isArray(obj.exercises)) {
-        exercises = obj.exercises
+        exercises = obj.exercises as ExerciseDBExercise[]
       } else if (Array.isArray(obj.data)) {
-        exercises = obj.data
+        exercises = obj.data as ExerciseDBExercise[]
       } else if (Array.isArray(obj.results)) {
-        exercises = obj.results
+        exercises = obj.results as ExerciseDBExercise[]
       }
     }
-    
+
     return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error searching exercises:', error)
@@ -128,30 +132,30 @@ export async function getAllExercises(name?: string, keywords?: string): Promise
   try {
     let path = '/api/v1/exercises'
     const params = new URLSearchParams()
-    
+
     if (name) params.append('name', name)
     if (keywords) params.append('keywords', keywords)
-    
+
     if (params.toString()) {
       path += '?' + params.toString()
     }
-    
+
     const data = await fetchFromAPI(path)
-    
+
     let exercises: ExerciseDBExercise[] = []
     if (Array.isArray(data)) {
       exercises = data
     } else if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
       if (Array.isArray(obj.exercises)) {
-        exercises = obj.exercises
+        exercises = obj.exercises as ExerciseDBExercise[]
       } else if (Array.isArray(obj.data)) {
-        exercises = obj.data
+        exercises = obj.data as ExerciseDBExercise[]
       } else if (Array.isArray(obj.results)) {
-        exercises = obj.results
+        exercises = obj.results as ExerciseDBExercise[]
       }
     }
-    
+
     return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching all exercises, using fallback:', error)
@@ -165,19 +169,19 @@ export async function getAllExercises(name?: string, keywords?: string): Promise
 export async function getExercisesByMuscle(muscle: string): Promise<NormalizedExercise[]> {
   try {
     const data = await fetchFromAPI(`/api/v1/exercises?muscle=${encodeURIComponent(muscle)}`)
-    
+
     let exercises: ExerciseDBExercise[] = []
     if (Array.isArray(data)) {
       exercises = data
     } else if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
       if (Array.isArray(obj.exercises)) {
-        exercises = obj.exercises
+        exercises = obj.exercises as ExerciseDBExercise[]
       } else if (Array.isArray(obj.data)) {
-        exercises = obj.data
+        exercises = obj.data as ExerciseDBExercise[]
       }
     }
-    
+
     return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by muscle:', error)
@@ -191,19 +195,19 @@ export async function getExercisesByMuscle(muscle: string): Promise<NormalizedEx
 export async function getExercisesByEquipment(equipment: string): Promise<NormalizedExercise[]> {
   try {
     const data = await fetchFromAPI(`/api/v1/exercises?equipment=${encodeURIComponent(equipment)}`)
-    
+
     let exercises: ExerciseDBExercise[] = []
     if (Array.isArray(data)) {
       exercises = data
     } else if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
       if (Array.isArray(obj.exercises)) {
-        exercises = obj.exercises
+        exercises = obj.exercises as ExerciseDBExercise[]
       } else if (Array.isArray(obj.data)) {
-        exercises = obj.data
+        exercises = obj.data as ExerciseDBExercise[]
       }
     }
-    
+
     return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by equipment:', error)
@@ -217,23 +221,41 @@ export async function getExercisesByEquipment(equipment: string): Promise<Normal
 export async function getExercisesByBodyPart(bodyPart: string): Promise<NormalizedExercise[]> {
   try {
     const data = await fetchFromAPI(`/api/v1/exercises?bodyPart=${encodeURIComponent(bodyPart)}`)
-    
+
     let exercises: ExerciseDBExercise[] = []
     if (Array.isArray(data)) {
       exercises = data
     } else if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
       if (Array.isArray(obj.exercises)) {
-        exercises = obj.exercises
+        exercises = obj.exercises as ExerciseDBExercise[]
       } else if (Array.isArray(obj.data)) {
-        exercises = obj.data
+        exercises = obj.data as ExerciseDBExercise[]
       }
     }
-    
+
     return exercises.map(normalizeExercise)
   } catch (error) {
     console.error('[v0] Error fetching exercises by body part:', error)
     return []
+  }
+}
+
+/**
+ * Fetch single exercise by ID
+ */
+export async function getExerciseById(exerciseId: string): Promise<NormalizedExercise | null> {
+  try {
+    const data = await fetchFromAPI(`/api/v1/exercises/${encodeURIComponent(exerciseId)}`)
+
+    if (!data || typeof data !== 'object') {
+      return null
+    }
+
+    return normalizeExercise(data as ExerciseDBExercise)
+  } catch (error) {
+    console.error('[v0] Error fetching exercise by id:', error)
+    return null
   }
 }
 
@@ -243,7 +265,7 @@ export async function getExercisesByBodyPart(bodyPart: string): Promise<Normaliz
 export async function getMuscles(): Promise<string[]> {
   try {
     const data = await fetchFromAPI('/api/v1/muscles')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data as string[] : []
   } catch (error) {
     console.error('[v0] Error fetching muscles:', error)
     return []
@@ -256,7 +278,7 @@ export async function getMuscles(): Promise<string[]> {
 export async function getBodyParts(): Promise<string[]> {
   try {
     const data = await fetchFromAPI('/api/v1/bodyparts')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data as string[] : []
   } catch (error) {
     console.error('[v0] Error fetching body parts:', error)
     return []
@@ -269,7 +291,7 @@ export async function getBodyParts(): Promise<string[]> {
 export async function getEquipment(): Promise<string[]> {
   try {
     const data = await fetchFromAPI('/api/v1/equipments')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data as string[] : []
   } catch (error) {
     console.error('[v0] Error fetching equipment:', error)
     return []
@@ -282,7 +304,7 @@ export async function getEquipment(): Promise<string[]> {
 export async function getExerciseTypes(): Promise<string[]> {
   try {
     const data = await fetchFromAPI('/api/v1/exercisetypes')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data as string[] : []
   } catch (error) {
     console.error('[v0] Error fetching exercise types:', error)
     return []
