@@ -1,160 +1,119 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import type { ExerciseSet } from '@/lib/types'
-import { BreakTimer } from './break-timer'
+import type { Exercise } from '@/lib/types'
 
-interface SetTrackerProps {
-  sets: ExerciseSet[]
-  targetReps: number
-  restDuration: number
-  onCompleteSet: (setIndex: number, actualReps: number, weight: number) => void
+interface ExerciseDetailsModalProps {
+  exercise: Exercise | null
+  isOpen: boolean
+  onClose: () => void
 }
 
-export function SetTracker({
-  sets,
-  targetReps,
-  restDuration,
-  onCompleteSet,
-}: SetTrackerProps) {
-  const firstIncompleteSetIndex = sets.findIndex((set) => !set.completed)
-  const safeInitialIndex =
-    firstIncompleteSetIndex === -1 ? sets.length - 1 : firstIncompleteSetIndex
+function formatLabel(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
 
-  const [expandedSet, setExpandedSet] = useState<number | null>(safeInitialIndex)
-  const [repsInput, setRepsInput] = useState('')
-  const [weightInput, setWeightInput] = useState('')
-  const [showBreakTimer, setShowBreakTimer] = useState(false)
-  const [currentSetAfterBreak, setCurrentSetAfterBreak] = useState<number | null>(null)
+export function ExerciseDetailsModal({
+  exercise,
+  isOpen,
+  onClose,
+}: ExerciseDetailsModalProps) {
+  if (!isOpen || !exercise) return null
 
-  useEffect(() => {
-    const nextIncomplete = sets.findIndex((set) => !set.completed)
-    const activeIndex = nextIncomplete === -1 ? sets.length - 1 : nextIncomplete
-    const suggestedWeight = activeIndex >= 0 ? sets[activeIndex]?.weight || 0 : 0
+  const equipmentDisplay = Array.isArray(exercise.equipment)
+    ? exercise.equipment.map(formatLabel).join(', ')
+    : exercise.equipment
+      ? formatLabel(exercise.equipment)
+      : 'Bodyweight'
 
-    setExpandedSet(activeIndex >= 0 ? activeIndex : null)
-    setRepsInput('')
-    setWeightInput(suggestedWeight > 0 ? String(suggestedWeight) : '')
-  }, [sets])
-
-  const handleCompleteCurrentSet = (setIndex: number) => {
-    const reps = parseInt(repsInput, 10) || 0
-    const weight = parseFloat(weightInput) || 0
-
-    if (reps <= 0) return
-
-    onCompleteSet(setIndex, reps, weight)
-
-    setRepsInput('')
-
-    if (setIndex + 1 < sets.length) {
-      setCurrentSetAfterBreak(setIndex + 1)
-      setShowBreakTimer(true)
-    } else {
-      setExpandedSet(null)
-    }
-  }
-
-  const advanceToNextSet = () => {
-    setShowBreakTimer(false)
-
-    if (currentSetAfterBreak !== null) {
-      const nextWeight = sets[currentSetAfterBreak]?.weight || 0
-      setExpandedSet(currentSetAfterBreak)
-      setWeightInput(nextWeight > 0 ? String(nextWeight) : '')
-    }
-  }
+  const repDisplay =
+    exercise.repsMin && exercise.repsMax
+      ? `${exercise.repsMin}-${exercise.repsMax} reps`
+      : `${exercise.reps || 10} reps`
 
   return (
-    <>
-      <div>
-        <p className="text-xs text-muted-foreground uppercase font-semibold mb-4">
-          Set Progress
-        </p>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full max-w-2xl rounded-t-2xl sm:rounded-2xl bg-card border border-border p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              {exercise.name || 'Unknown Exercise'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {formatLabel(exercise.targetMuscle || 'General')} • {equipmentDisplay}
+            </p>
+          </div>
 
-        <div className="space-y-3">
-          {sets.map((set, idx) => (
-            <div
-              key={set.setNumber}
-              className={`rounded-lg border transition-colors ${set.completed
-                  ? 'border-green-500 bg-green-500/10'
-                  : 'border-border bg-card'
-                }`}
-            >
-              <button
-                onClick={() => {
-                  if (!set.completed) {
-                    setExpandedSet(expandedSet === idx ? null : idx)
-                    setWeightInput(set.weight > 0 ? String(set.weight) : '')
-                    setRepsInput('')
-                  }
-                }}
-                className="w-full p-3 text-left flex items-center justify-between"
-              >
-                <span className="font-semibold text-foreground">
-                  Set {idx + 1} {set.completed && '✓'}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {set.completed
-                    ? `${set.actualReps}x${set.weight}${set.weightUnit}`
-                    : `${targetReps} reps`}
-                </span>
-              </button>
-
-              {expandedSet === idx && !set.completed && (
-                <div className="px-3 pb-3 border-t border-border space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground pt-3">
-                      Reps Completed
-                    </label>
-                    <input
-                      type="number"
-                      value={repsInput}
-                      onChange={(e) => setRepsInput(e.target.value)}
-                      placeholder={`Target: ${targetReps}`}
-                      className="w-full mt-1 px-3 py-2 border border-border rounded-lg text-foreground bg-background"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground">
-                      Weight Used
-                    </label>
-                    <div className="flex gap-2 mt-1">
-                      <input
-                        type="number"
-                        value={weightInput}
-                        onChange={(e) => setWeightInput(e.target.value)}
-                        placeholder="0"
-                        className="flex-1 px-3 py-2 border border-border rounded-lg text-foreground bg-background"
-                      />
-                      <span className="px-3 py-2 text-sm text-muted-foreground">
-                        lbs
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleCompleteCurrentSet(idx)}
-                    disabled={!repsInput}
-                    className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  >
-                    Complete Set
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+          <button
+            onClick={onClose}
+            className="px-3 py-2 rounded-lg border border-border text-foreground hover:bg-secondary"
+          >
+            Close
+          </button>
         </div>
-      </div>
 
-      {showBreakTimer && (
-        <BreakTimer
-          duration={restDuration}
-          onComplete={advanceToNextSet}
-          onSkip={advanceToNextSet}
-        />
-      )}
-    </>
+        {exercise.gifUrl && (
+          <div className="rounded-xl overflow-hidden bg-muted mb-5 flex items-center justify-center">
+            <img
+              src={exercise.gifUrl}
+              alt={exercise.name}
+              className="w-full h-64 object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="rounded-xl bg-secondary/30 p-4">
+            <p className="text-xs uppercase font-semibold text-muted-foreground">
+              Target
+            </p>
+            <p className="text-lg font-bold text-foreground">
+              {formatLabel(exercise.targetMuscle || 'General')}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-secondary/30 p-4">
+            <p className="text-xs uppercase font-semibold text-muted-foreground">
+              Equipment
+            </p>
+            <p className="text-lg font-bold text-foreground">
+              {equipmentDisplay}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-accent/20 p-4 mb-5">
+          <p className="text-xs uppercase font-semibold text-muted-foreground">
+            Prescription
+          </p>
+          <p className="text-lg font-bold text-foreground mt-1">
+            {exercise.sets || 3} sets • {repDisplay}
+          </p>
+        </div>
+
+        {exercise.instructions && exercise.instructions.length > 0 ? (
+          <div>
+            <p className="text-sm font-semibold text-foreground mb-3">
+              How To Do It
+            </p>
+            <ol className="space-y-2 list-decimal list-inside text-sm text-muted-foreground">
+              {exercise.instructions.map((instruction, idx) => (
+                <li key={idx}>{instruction}</li>
+              ))}
+            </ol>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No detailed instructions available for this exercise yet.
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
